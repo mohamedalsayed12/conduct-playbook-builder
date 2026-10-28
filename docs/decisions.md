@@ -58,3 +58,20 @@
 **Decision:** Each build phase lands on `main` through its own branch (`phase-N-<name>`) and pull request, gated by the CI and OpenQodex checks.
 **Alternatives:** Committing straight to `main`; one long-lived feature branch.
 **Why:** Every phase gets checked before it merges, and the git history tells the build story phase by phase for anyone reviewing the repo.
+
+## Phase 2 — Core API
+
+### Temporary auth dependency instead of open routers
+**Decision:** Every management route depends on `Phase2TemporaryCaller` (`get_phase2_temporary_caller`), a clearly named stub that always allows access.
+**Alternatives:** No auth dependency until Phase 3; fake JWT already in Phase 2.
+**Why:** Phase 3 can replace one dependency provider (`get_current_user`) without rewriting every endpoint signature, and the stub’s name makes the temporary hole obvious in code review.
+
+### Generic invite failure message
+**Decision:** Unknown, expired, and already-used invite tokens all raise `InviteTokenInvalidError` with the same client message.
+**Alternatives:** Distinct messages per failure mode; 404 for unknown tokens.
+**Why:** Distinct errors would let attackers probe for valid tokens. One generic 400 keeps invite acceptance enumeration-safe.
+
+### Limit/offset pagination with a hard max page size
+**Decision:** `GET /tenants/{id}/users` uses limit/offset, defaults from settings, and rejects limits above `MAX_PAGE_SIZE`.
+**Alternatives:** Cursor-only pagination; unbounded pages.
+**Why:** Limit/offset is enough for strategist tooling at current scale, and a max page size prevents accidental full-table responses.

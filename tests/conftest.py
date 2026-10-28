@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.orm import Session, SessionTransaction
@@ -22,12 +25,28 @@ os.environ.setdefault(
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
+from app.api.deps import get_clock, get_db_session
 from app.cache import reset_redis_cache
 from app.config import get_settings
 from app.db import get_engine, reset_db_caches
 from app.main import create_app
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+@dataclass
+class FrozenClock:
+    """Injectable clock that tests can advance without sleeping."""
+
+    value: datetime = field(
+        default_factory=lambda: datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC)
+    )
+
+    def __call__(self) -> datetime:
+        return self.value
+
+    def set(self, value: datetime) -> None:
+        self.value = value
 
 
 def _alembic_config() -> Config:
@@ -70,8 +89,6 @@ def db_session() -> Iterator[Session]:
 
     @event.listens_for(session, "after_transaction_end")
     def _restart_savepoint(sess: Session, trans: SessionTransaction) -> None:
-        # Nested savepoints are rolled back on IntegrityError; reopen one so the
-        # outer transaction can keep serving the rest of the test.
         parent = getattr(trans, "_parent", None)
         if trans.nested and parent is not None and not parent.nested:
             sess.begin_nested()
@@ -85,10 +102,29 @@ def db_session() -> Iterator[Session]:
 
 
 @pytest.fixture
-def client() -> Iterator[TestClient]:
-    """HTTP client against a fresh app instance."""
+def frozen_clock() -> FrozenClock:
+    """Return a mutable injectable clock starting at a fixed UTC instant."""
+    return FrozenClock()
+
+
+@pytest.fixture
+def app(db_session: Session, frozen_clock: FrozenClock) -> Iterator[FastAPI]:
+    """App with DB session and clock overridden for transactional tests."""
     application = create_app(get_settings())
-    with TestClient(application) as test_client:
+
+    def _override_session() -> Iterator[Session]:
+        yield db_session
+
+    application.dependency_overrides[get_db_session] = _override_session
+    application.dependency_overrides[get_clock] = lambda: frozen_clock
+    yield application
+    application.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
+    """HTTP client against a fresh app instance with test overrides."""
+    with TestClient(app) as test_client:
         yield test_client
 
 

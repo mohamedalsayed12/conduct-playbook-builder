@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     database_url: str = "postgresql+psycopg://conduct:conduct@localhost:5432/conduct"
     redis_url: str = "redis://localhost:6379/0"
+    invite_expiry_hours: int = 72
+    max_page_size: int = 100
+    default_page_size: int = 20
 
 
 @lru_cache
