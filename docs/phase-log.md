@@ -43,7 +43,7 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 ## Phase 4 — Rollout summary, stuck users, Redis cache
 
-**Branch:** `phase-4-rollout-summary` (PR/release links filled at merge)
+**Branch / PR:** `phase-4-rollout-summary` · [#10](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/10) · closes #3
 
 - `GET /tenants/{id}/summary`: users per stage, sap_role×stage counts, stuck count, average days per stage from `StageEvent` (SQL aggregates).
 - `GET /tenants/{id}/stuck`: paginated stuck users with days stuck and next playbook step.
