@@ -16,6 +16,7 @@ from app.models import Playbook, PlaybookStep, StageEvent, User
 from app.models.enums import SapRole, UserStage
 from app.services.scoping import require_management_role, require_tenant_access
 from app.services.stages import next_stage
+from app.services.summary import invalidate_tenant_summary_after_commit
 
 Clock = Callable[[], datetime]
 
@@ -47,6 +48,7 @@ def advance_user_stage(
         )
     )
     session.commit()
+    invalidate_tenant_summary_after_commit(tenant_id)
     session.refresh(user)
     return user, from_stage, to_stage
 

@@ -1,0 +1,14 @@
+---
+description: After every phase, summarize what shipped and append docs/phase-log.md
+alwaysApply: true
+---
+
+# Phase wrap-up (required)
+
+When a build phase reaches Definition of Done (checks green, commit, GitHub PR/merge/release/issue/milestone as usual), **before** stopping for `continue`:
+
+1. **Chat summary** — In the phase-complete message, include a short **What this phase did** section (bullet list of concrete deliverables, not process fluff).
+2. **Phase log** — Append the same content under a new `## Phase N — …` heading in `docs/phase-log.md`, including branch / PR / release / issue links when they exist.
+3. **Commit the log** — Include the `docs/phase-log.md` update in the phase commit (or a follow-up `docs:` commit on the phase branch before merge). Do not leave the log stale on `main`.
+
+Do not skip the log because the chat already had a summary. The file is the durable record across sessions.

@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     default_page_size: int = 20
     jwt_secret: str = "change-me-in-production-use-a-long-random-secret-value-64b"  # noqa: S105
     jwt_expiry_minutes: int = 30
+    stuck_after_days: int = 7
+    summary_cache_ttl_seconds: int = 60
 
 
 @lru_cache
