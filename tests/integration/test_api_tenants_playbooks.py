@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.models import Playbook, PlaybookStep
 from app.models.enums import UserStage
+from tests.auth_helpers import bootstrap_strategist, create_tenant_as_strategist
 from tests.conftest import FrozenClock
-from tests.factories import seed_default_playbook
 
 
 def test_create_tenant_copies_default_playbook(
@@ -17,17 +17,8 @@ def test_create_tenant_copies_default_playbook(
     db_session: Session,
     frozen_clock: FrozenClock,
 ) -> None:
-    seed_default_playbook(db_session, now=frozen_clock())
-
-    response = client.post(
-        "/tenants",
-        json={"name": "Example Manufacturing GmbH"},
-    )
-
-    assert response.status_code == 201
-    body = response.json()
-    assert body["name"] == "Example Manufacturing GmbH"
-    tenant_id = body["id"]
+    headers, _ = bootstrap_strategist(client, db_session, frozen_clock)
+    tenant_id = create_tenant_as_strategist(client, headers)
 
     playbook = db_session.scalars(
         select(Playbook).where(Playbook.tenant_id == tenant_id)
@@ -44,7 +35,10 @@ def test_create_tenant_copies_default_playbook(
         UserStage.ACTIVE,
     }
 
-    playbook_response = client.get(f"/tenants/{tenant_id}/playbook")
+    playbook_response = client.get(
+        f"/tenants/{tenant_id}/playbook",
+        headers=headers,
+    )
     assert playbook_response.status_code == 200
     grouped = playbook_response.json()["steps_by_stage"]
     assert "activated" in grouped
@@ -53,6 +47,26 @@ def test_create_tenant_copies_default_playbook(
 
 def test_create_tenant_without_default_playbook_returns_503(
     client: TestClient,
+    db_session: Session,
+    frozen_clock: FrozenClock,
 ) -> None:
-    response = client.post("/tenants", json={"name": "Demo Logistics AG"})
+    from tests.auth_helpers import login_headers
+    from tests.factories import create_strategist
+
+    create_strategist(
+        db_session,
+        email="lonely@example.com",
+        password="secure-password-1",
+        now=frozen_clock(),
+    )
+    headers = login_headers(
+        client,
+        email="lonely@example.com",
+        password="secure-password-1",
+    )
+    response = client.post(
+        "/tenants",
+        json={"name": "Demo Logistics AG"},
+        headers=headers,
+    )
     assert response.status_code == 503

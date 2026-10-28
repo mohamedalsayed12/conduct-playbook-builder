@@ -10,8 +10,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.clock import utc_now
-from app.errors import DefaultPlaybookMissingError, NotFoundError
-from app.models import Playbook, PlaybookStep, Tenant
+from app.errors import DefaultPlaybookMissingError
+from app.models import Playbook, PlaybookStep, StrategistAssignment, Tenant, User
+from app.services.scoping import require_strategist
 
 Clock = Callable[[], datetime]
 
@@ -20,9 +21,11 @@ def create_tenant(
     session: Session,
     *,
     name: str,
+    actor: User,
     clock: Clock = utc_now,
 ) -> Tenant:
-    """Create a tenant and copy the global default playbook in one transaction."""
+    """Create a tenant, copy the default playbook, assign the creating strategist."""
+    require_strategist(actor)
     now = clock()
     tenant = Tenant(name=name, created_at=now)
     session.add(tenant)
@@ -30,16 +33,15 @@ def create_tenant(
 
     default_playbook = _get_default_playbook(session)
     _copy_playbook_to_tenant(session, default_playbook, tenant.id, now)
+    session.add(
+        StrategistAssignment(
+            strategist_id=actor.id,
+            tenant_id=tenant.id,
+            assigned_at=now,
+        )
+    )
     session.commit()
     session.refresh(tenant)
-    return tenant
-
-
-def get_tenant(session: Session, tenant_id: uuid.UUID) -> Tenant:
-    """Return a tenant by id or raise NotFoundError."""
-    tenant = session.get(Tenant, tenant_id)
-    if tenant is None:
-        raise NotFoundError(f"Tenant '{tenant_id}' was not found.")
     return tenant
 
 

@@ -16,8 +16,8 @@ from app.models import Invite, StageEvent, User
 from app.models.enums import SapRole, UserRole, UserStage
 from app.security.invite_tokens import generate_invite_token, hash_invite_token
 from app.security.passwords import hash_password
+from app.services.scoping import require_management_role, require_tenant_access
 from app.services.stages import assert_transition_allowed
-from app.services.tenants import get_tenant
 
 Clock = Callable[[], datetime]
 
@@ -30,12 +30,14 @@ def create_invite(
     tenant_id: uuid.UUID,
     email: str,
     sap_role: SapRole,
+    actor: User,
     settings: Settings | None = None,
     clock: Clock = utc_now,
 ) -> tuple[Invite, User, str]:
     """Create an invited end user and return the invite, user, and raw token once."""
+    require_management_role(actor)
+    require_tenant_access(session, actor, tenant_id)
     resolved = settings if settings is not None else get_settings()
-    get_tenant(session, tenant_id)
     now = clock()
 
     user = User(

@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 
+from app.api.auth import router as auth_router
 from app.api.errors import register_exception_handlers
 from app.api.health import router as health_router
 from app.api.invites import router as invites_router
@@ -19,12 +20,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(
         title="Conduct Playbook Builder",
-        version="0.2.0",
+        version="0.3.0",
         docs_url="/docs",
         redoc_url="/redoc",
     )
     register_exception_handlers(application)
     application.include_router(health_router)
+    application.include_router(auth_router)
     application.include_router(tenants_router)
     application.include_router(invites_router)
     application.include_router(users_router)

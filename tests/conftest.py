@@ -38,9 +38,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 class FrozenClock:
     """Injectable clock that tests can advance without sleeping."""
 
-    value: datetime = field(
-        default_factory=lambda: datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC)
-    )
+    # Default to wall-clock UTC so JWTs (validated against real time) stay valid.
+    value: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def __call__(self) -> datetime:
         return self.value

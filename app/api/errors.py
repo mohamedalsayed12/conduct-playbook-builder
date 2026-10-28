@@ -7,8 +7,10 @@ from fastapi.responses import JSONResponse
 
 from app.errors import (
     AppError,
+    AuthenticationError,
     ConflictError,
     DefaultPlaybookMissingError,
+    ForbiddenError,
     InviteTokenInvalidError,
     NotFoundError,
     ValidationAppError,
@@ -31,6 +33,24 @@ def register_exception_handlers(application: FastAPI) -> None:
         exc: ConflictError,
     ) -> JSONResponse:
         return JSONResponse(status_code=409, content={"detail": exc.message})
+
+    @application.exception_handler(AuthenticationError)
+    async def authentication_handler(
+        _request: Request,
+        exc: AuthenticationError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @application.exception_handler(ForbiddenError)
+    async def forbidden_handler(
+        _request: Request,
+        exc: ForbiddenError,
+    ) -> JSONResponse:
+        return JSONResponse(status_code=403, content={"detail": exc.message})
 
     @application.exception_handler(InviteTokenInvalidError)
     async def invite_invalid_handler(

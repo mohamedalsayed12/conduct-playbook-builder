@@ -75,3 +75,20 @@
 **Decision:** `GET /tenants/{id}/users` uses limit/offset, defaults from settings, and rejects limits above `MAX_PAGE_SIZE`.
 **Alternatives:** Cursor-only pagination; unbounded pages.
 **Why:** Limit/offset is enough for strategist tooling at current scale, and a max page size prevents accidental full-table responses.
+
+## Phase 3 — Security
+
+### 404 (not 403) for inaccessible tenants
+**Decision:** `require_tenant_access` raises `NotFoundError` when the caller is outside `accessible_tenant_ids`, same as a missing tenant.
+**Alternatives:** 403 Forbidden; distinct error bodies for missing vs forbidden.
+**Why:** A 403 would confirm that a tenant id exists. Returning 404 for both cases prevents tenant-id enumeration.
+
+### Creating a tenant auto-assigns the strategist
+**Decision:** `create_tenant` inserts a `StrategistAssignment` for the creating strategist in the same transaction.
+**Alternatives:** Require a separate assign call; leave the creator without access until assigned.
+**Why:** Without an assignment the creator could not call any tenant-scoped endpoint after create. Auto-assign is the natural bootstrap for coverage.
+
+### HS256 JWT with algorithm allow-list
+**Decision:** Issue and verify tokens with HS256 only via PyJWT `algorithms=["HS256"]`.
+**Alternatives:** Asymmetric RS256; accept multiple HMAC algorithms.
+**Why:** HS256 matches the approved stack (shared secret in settings). An allow-list rejects `alg=none` and algorithm-confusion attacks.

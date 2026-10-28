@@ -14,8 +14,8 @@ from app.config import Settings, get_settings
 from app.errors import NotFoundError, ValidationAppError
 from app.models import Playbook, PlaybookStep, StageEvent, User
 from app.models.enums import SapRole, UserStage
+from app.services.scoping import require_management_role, require_tenant_access
 from app.services.stages import next_stage
-from app.services.tenants import get_tenant
 
 Clock = Callable[[], datetime]
 
@@ -25,10 +25,12 @@ def advance_user_stage(
     *,
     tenant_id: uuid.UUID,
     user_id: uuid.UUID,
+    actor: User,
     clock: Clock = utc_now,
 ) -> tuple[User, UserStage, UserStage]:
     """Move the user forward exactly one stage and append a StageEvent."""
-    get_tenant(session, tenant_id)
+    require_management_role(actor)
+    require_tenant_access(session, actor, tenant_id)
     user = _get_tenant_user(session, tenant_id=tenant_id, user_id=user_id)
     from_stage = user.stage
     to_stage = next_stage(from_stage)
@@ -53,6 +55,7 @@ def list_users(
     session: Session,
     *,
     tenant_id: uuid.UUID,
+    actor: User,
     stage: UserStage | None = None,
     sap_role: SapRole | None = None,
     limit: int | None = None,
@@ -60,8 +63,9 @@ def list_users(
     settings: Settings | None = None,
 ) -> tuple[list[User], int]:
     """Return a stable, filtered page of users for a tenant."""
+    require_management_role(actor)
+    require_tenant_access(session, actor, tenant_id)
     resolved = settings if settings is not None else get_settings()
-    get_tenant(session, tenant_id)
     page_size = resolved.default_page_size if limit is None else limit
     if page_size < 1 or page_size > resolved.max_page_size:
         raise ValidationAppError(
@@ -96,9 +100,11 @@ def get_next_steps(
     *,
     tenant_id: uuid.UUID,
     user_id: uuid.UUID,
+    actor: User,
 ) -> tuple[User, list[PlaybookStep]]:
     """Return playbook steps for the user's current stage."""
-    get_tenant(session, tenant_id)
+    require_management_role(actor)
+    require_tenant_access(session, actor, tenant_id)
     user = _get_tenant_user(session, tenant_id=tenant_id, user_id=user_id)
     playbook = _get_tenant_playbook(session, tenant_id)
     steps = [step for step in playbook.steps if step.stage == user.stage]

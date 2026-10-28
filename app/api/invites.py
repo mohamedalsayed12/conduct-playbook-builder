@@ -6,7 +6,7 @@ import uuid
 
 from fastapi import APIRouter, status
 
-from app.api.deps import AppClock, AppSettings, DbSession, Phase2Caller
+from app.api.deps import AppClock, AppSettings, CurrentUser, DbSession
 from app.schemas.invites import (
     InviteAcceptRequest,
     InviteAcceptResponse,
@@ -29,7 +29,7 @@ def create_invite(
     session: DbSession,
     settings: AppSettings,
     clock: AppClock,
-    _caller: Phase2Caller,
+    current_user: CurrentUser,
 ) -> InviteCreateResponse:
     """Invite an end user; returns the raw token once."""
     invite, user, raw_token = invite_service.create_invite(
@@ -37,6 +37,7 @@ def create_invite(
         tenant_id=tenant_id,
         email=body.email,
         sap_role=body.sap_role,
+        actor=current_user,
         settings=settings,
         clock=clock,
     )
