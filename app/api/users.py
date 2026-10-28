@@ -6,7 +6,7 @@ import uuid
 
 from fastapi import APIRouter, Query, status
 
-from app.api.deps import AppClock, AppSettings, DbSession, Phase2Caller
+from app.api.deps import AppClock, AppSettings, CurrentUser, DbSession
 from app.models.enums import SapRole, UserStage
 from app.schemas.users import (
     AdvanceStageResponse,
@@ -25,7 +25,7 @@ def list_users(
     tenant_id: uuid.UUID,
     session: DbSession,
     settings: AppSettings,
-    _caller: Phase2Caller,
+    current_user: CurrentUser,
     stage: UserStage | None = None,
     sap_role: SapRole | None = None,
     limit: int | None = Query(default=None, ge=1),
@@ -35,6 +35,7 @@ def list_users(
     users, total = user_service.list_users(
         session,
         tenant_id=tenant_id,
+        actor=current_user,
         stage=stage,
         sap_role=sap_role,
         limit=limit,
@@ -60,13 +61,14 @@ def advance_user(
     user_id: uuid.UUID,
     session: DbSession,
     clock: AppClock,
-    _caller: Phase2Caller,
+    current_user: CurrentUser,
 ) -> AdvanceStageResponse:
     """Advance the user exactly one onboarding stage."""
     user, from_stage, to_stage = user_service.advance_user_stage(
         session,
         tenant_id=tenant_id,
         user_id=user_id,
+        actor=current_user,
         clock=clock,
     )
     return AdvanceStageResponse(
@@ -85,13 +87,14 @@ def get_next_steps(
     tenant_id: uuid.UUID,
     user_id: uuid.UUID,
     session: DbSession,
-    _caller: Phase2Caller,
+    current_user: CurrentUser,
 ) -> NextStepsResponse:
     """Return playbook steps for the user's current stage."""
     user, steps = user_service.get_next_steps(
         session,
         tenant_id=tenant_id,
         user_id=user_id,
+        actor=current_user,
     )
     return NextStepsResponse(
         user_id=user.id,

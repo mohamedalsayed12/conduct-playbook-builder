@@ -31,3 +31,11 @@ class DefaultPlaybookMissingError(AppError):
 
 class ValidationAppError(AppError):
     """Domain-level validation failure distinct from FastAPI request validation."""
+
+
+class AuthenticationError(AppError):
+    """Caller is missing or has invalid credentials."""
+
+
+class ForbiddenError(AppError):
+    """Caller is authenticated but not allowed to perform this action."""

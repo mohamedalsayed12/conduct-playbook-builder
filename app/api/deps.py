@@ -1,30 +1,24 @@
-"""FastAPI dependencies. Temporary Phase 2 caller is replaced in Phase 3."""
+"""FastAPI dependencies including authenticated current user."""
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Iterator
-from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.clock import Clock, utc_now
 from app.config import Settings, get_settings
 from app.db import get_session
+from app.errors import AuthenticationError
+from app.models import User
 from app.models.enums import UserRole
+from app.security.jwt import decode_access_token
 
-
-@dataclass(frozen=True, slots=True)
-class Phase2TemporaryCaller:
-    """
-    PHASE 2 TEMPORARY AUTH STUB — replaced in Phase 3 by get_current_user.
-
-    Endpoints depend on this so Phase 3 can swap the provider without rewriting
-    every signature. It grants unrestricted access by design.
-    """
-
-    role: UserRole = UserRole.STRATEGIST
+_bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_db_session() -> Iterator[Session]:
@@ -37,12 +31,32 @@ def get_clock() -> Clock:
     return utc_now
 
 
-def get_phase2_temporary_caller() -> Phase2TemporaryCaller:
-    """Return the temporary unauthenticated caller used until Phase 3."""
-    return Phase2TemporaryCaller()
+def get_current_user(
+    session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Depends(_bearer_scheme),
+    ],
+) -> User:
+    """Load the authenticated user from a Bearer JWT."""
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise AuthenticationError("Could not validate credentials")
+
+    payload = decode_access_token(credentials.credentials, settings)
+    try:
+        user_id = uuid.UUID(str(payload["sub"]))
+        role = UserRole(str(payload["role"]))
+    except (KeyError, ValueError, TypeError) as exc:
+        raise AuthenticationError("Could not validate credentials") from exc
+
+    user = session.get(User, user_id)
+    if user is None or user.role != role:
+        raise AuthenticationError("Could not validate credentials")
+    return user
 
 
 DbSession = Annotated[Session, Depends(get_db_session)]
 AppClock = Annotated[Clock, Depends(get_clock)]
 AppSettings = Annotated[Settings, Depends(get_settings)]
-Phase2Caller = Annotated[Phase2TemporaryCaller, Depends(get_phase2_temporary_caller)]
+CurrentUser = Annotated[User, Depends(get_current_user)]

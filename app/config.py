@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     invite_expiry_hours: int = 72
     max_page_size: int = 100
     default_page_size: int = 20
+    jwt_secret: str = "change-me-in-production-use-a-long-random-secret-value-64b"  # noqa: S105
+    jwt_expiry_minutes: int = 30
 
 
 @lru_cache

@@ -43,7 +43,7 @@ src = ["app", "tests"]
 select = ["E", "F", "I", "B", "UP", "SIM", "S", "N", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101"]
+"tests/**/*.py" = ["S101", "S105", "S106"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
@@ -63,4 +63,5 @@ filterwarnings = [
     # Starlette currently warns that TestClient should use httpx2; that package
     # is outside the approved stack, so keep httpx and silence this until Phase later.
     "ignore:Using `httpx` with `starlette.testclient` is deprecated:starlette.exceptions.StarletteDeprecationWarning",
+    "ignore:The HMAC key is .* below the minimum recommended length:jwt.InsecureKeyLengthWarning",
 ]
