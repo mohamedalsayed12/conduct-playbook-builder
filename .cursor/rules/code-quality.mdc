@@ -1,0 +1,42 @@
+---
+description: Code quality and workflow rules for the Conduct Playbook Builder
+globs:
+alwaysApply: true
+---
+
+# Conduct Playbook Builder: always-on rules
+
+Full spec and phases: see `CURSOR_PROMPT.md` in the repo root.
+
+## Workflow
+- Work one phase at a time. At the end of a phase, run lint, typecheck and tests, show the results, summarise, then STOP and wait for me to type `continue`.
+- Ask before adding any dependency not in the approved stack. Ask instead of guessing when something is ambiguous. Do not invent features.
+- Each phase gets its own branch `phase-N-<short-name>`, created from an up-to-date `main`. One conventional commit per logical change (feat/fix/test/chore/docs).
+- Never push, merge or open pull requests. At the end of a phase, report the branch name and commit messages; I push and merge once CI and OpenQodex pass.
+- If I paste OpenQodex findings, fix the root cause. Never silence a scanner or add ignore comments to get a check to pass.
+
+## Approved stack
+Python 3.12, FastAPI, Pydantic v2, pydantic-settings, SQLAlchemy 2.0 (typed Mapped[], sync sessions), psycopg 3, Alembic, PostgreSQL 16, Redis 7 (redis), PyJWT, argon2-cffi, pytest + TestClient against a real Postgres test DB, uv, ruff, mypy --strict, Docker Compose, GitHub Actions.
+
+## Code quality (non-negotiable)
+- `mypy --strict` passes. No `Any` without a comment explaining why; no `# type: ignore` without an error code and a reason.
+- `ruff check` and `ruff format --check` pass (rules E, F, I, B, UP, SIM, S, N, RUF).
+- Layers: routers = HTTP only; services = business logic; models/repositories = data access. No SQL or business rules in routers.
+- Banned: commented-out code, print, TODO/FIXME, bare except, unused code, magic numbers, duplicated logic.
+- Domain exceptions mapped to HTTP in one handler; never leak internals or stack traces.
+- All datetimes are timezone-aware UTC via the injectable clock. Never use naive datetimes or sleep in tests.
+- Config only via environment variables / pydantic-settings. Commit .env.example, never .env.
+- Every state change plus its StageEvent is one atomic transaction.
+- Small single-purpose functions with explicit names; one-line docstrings on public service functions.
+
+## Security
+- Every tenant-scoped query goes through `accessible_tenant_ids(user)`. Inaccessible tenants return 404, not 403.
+- Invite tokens: `secrets.token_urlsafe(32)`, store only the SHA-256 hash, expire, single use, one generic error for invalid/expired/used.
+- Passwords hashed with argon2. JWTs are short-lived HS256 with validated exp.
+- Never log emails, names, passwords, tokens or JWTs. Log IDs only.
+- Redis cache: invalidate only AFTER commit; if Redis is down, fall back to the DB.
+
+## Tests and docs
+- Every phase ships tests for what it built. Tests are deterministic and isolated (transaction rollback per test).
+- Record every non-obvious design decision in `docs/decisions.md` (decision, alternatives, why).
+- Seed and test data use fictional companies only (e.g. "Example Manufacturing GmbH"). Never real names.

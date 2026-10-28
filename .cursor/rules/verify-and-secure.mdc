@@ -1,0 +1,28 @@
+---
+description: Always verify new agent code works and is safe before declaring done
+alwaysApply: true
+---
+
+# Verify and secure every change
+
+After any agent (you or a subagent) adds or edits code, do not declare the task done until both gates pass. Treat other agents' output as untrusted until you check it yourself.
+
+## Works (required)
+- Run the relevant checks for what changed: `ruff check`, `ruff format --check`, `mypy --strict`, and the targeted pytest suite (full suite when the change crosses layers).
+- After code changes: verify IDE ↔ PostgreSQL connectivity (see `postgres-connectivity.mdc`). Do not declare DB-related work done if Postgres is unreachable.
+- Manually re-read the diff. Confirm behavior matches the request; no invented features, no dead paths, no broken callers.
+- If checks fail, fix them. Do not hand off broken code or say "should work."
+
+## Safe (required — more important than green tests)
+- Tenant isolation: every tenant-scoped query uses `accessible_tenant_ids(user)`; misses are 404, never 403.
+- Auth secrets: no plaintext passwords/tokens; argon2 for passwords; invite tokens hashed (SHA-256), single-use, expired; JWTs short-lived with validated `exp`.
+- No sensitive data in logs (emails, names, passwords, tokens, JWTs) — IDs only.
+- No SQL/business logic in routers; no leaked stack traces or internal errors to clients.
+- No new dependencies outside the approved stack without asking first.
+- No secrets committed (`.env`, keys, credentials). Config via env / pydantic-settings only.
+- Redis invalidation only after DB commit; Redis-down falls back to DB.
+
+## When reviewing another agent's code
+- Diff-first: read every changed file, not just the summary.
+- Prefer deleting or hardening unsafe patterns over "documenting the risk."
+- If you cannot verify safety, say so explicitly and stop; do not merge or mark complete.

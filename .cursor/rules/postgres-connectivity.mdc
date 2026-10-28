@@ -1,0 +1,28 @@
+---
+description: Always verify IDE ↔ PostgreSQL connectivity after code changes
+alwaysApply: true
+---
+
+# PostgreSQL connectivity gate
+
+This project uses **real PostgreSQL 16** (never SQLite). After any agent adds or edits code that touches the DB stack, app config, Docker Compose, migrations, tests, or health checks — and before declaring the task done — prove the IDE can reach Postgres.
+
+## When to run the check
+- After adding/changing code in this session (especially `app/db.py`, `app/config.py`, models, migrations, `docker-compose.yml`, `.env.example`, conftest).
+- Before running integration/pytest suites that need Postgres.
+- If the previous check failed or Docker was restarted.
+
+## How to verify (in order)
+1. **Daemon up:** Docker Desktop / engine reachable (`docker info` succeeds).
+2. **Container healthy:** Compose Postgres is up (service `postgres`, and `postgres_test` when tests run). Prefer `pg_isready` inside the container over guessing from ports alone.
+3. **App DSN:** Connect with the project's `DATABASE_URL` from `.env` / `.env.example` (default shape: `postgresql+psycopg://conduct:conduct@localhost:5432/conduct`). A one-shot `SELECT 1` via psycopg or the app's session/engine is enough.
+4. **Health (once Phase 0 health exists):** `GET /health` must report DB ok (not 503 for DB).
+
+## Report to the user
+- Say explicitly: **Postgres reachable** or **Postgres unreachable**, with the failing step (Docker down, container unhealthy, auth/DSN, etc.).
+- Do not claim tests or DB work "should work" without a successful connectivity check in that session.
+- If Postgres is down, start/fix Compose (or tell the user Docker Desktop must be started) before proceeding with DB-dependent work. Do not silently skip to SQLite or mock the DB.
+
+## Do not
+- Invent alternate databases or skip the real Postgres test DB.
+- Commit `.env` or print connection passwords in logs/chat beyond what `.env.example` already shows.

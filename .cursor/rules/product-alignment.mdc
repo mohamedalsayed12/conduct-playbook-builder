@@ -1,0 +1,53 @@
+---
+description: Stay aligned with Conduct (conduct.ai) problem and how this playbook builder fixes it
+alwaysApply: true
+---
+
+# Product alignment: Conduct Playbook Builder
+
+Before inventing features, naming domains, writing copy, or expanding scope, re-check this north star. Prefer [conduct.ai](https://conduct.ai) language over generic SaaS onboarding jargon.
+
+## What Conduct is (the company / product)
+
+Conduct is an **AI operating system for enterprise software**, starting with SAP. Positioning from the site:
+
+- Unlock systems that power the business; go live in ~48h.
+- Understand custom code and dependencies; capture institutional knowledge; accelerate change, ops, and S/4HANA-style transformations.
+- Customers are large enterprises; end users are SAP practitioners (developers, analysts, process owners, architects).
+
+This repo is **not** the AI OS itself. It is an internal-style **deployment** tool that helps Conduct’s product actually land after a sale.
+
+## The problem we are fixing
+
+After a sale, a small **Deployment Strategist** team must onboard **hundreds of end users per customer** and make sure Conduct **lands and sticks**.
+
+Today that work does not scale: each account needs invites, stage tracking, and next actions. Capacity grows only by hiring. Knowledge of “what good onboarding looks like” sits in people’s heads, not in a reusable system — the same class of problem Conduct solves for SAP knowledge, applied here to **deployment knowledge**.
+
+Pitch (keep this framing): *"Conduct makes SAP knowledge available at scale. This tool tries to do the same for deployment knowledge."*
+
+## How this project fixes it
+
+Multi-tenant onboarding tracker so strategists can:
+
+1. Create a customer **tenant** and invite its users.
+2. Move each user through **`invited → activated → first_use → active`**.
+3. Apply a reusable **playbook** (ordered steps per stage) to every account so more accounts ship without matching headcount growth.
+4. See **who is stuck**, a **rollout summary** per account, and **average time in stage**.
+
+Customer admins see **only their tenant**. Tenant isolation and security are product features, not afterthoughts.
+
+## Alignment gate (every change)
+
+- Does this help strategists land/stick Conduct at enterprise accounts via stages + playbooks + stuck/rollout visibility?
+- Would this make sense on a Conduct GTM/deployment team — not a generic CRM, LMS, or ticket system?
+- Keep **fictional** company/person data only (e.g. Example Manufacturing GmbH). Never put real customer names in code, seeds, or tests.
+- Do **not** invent features outside `CURSOR_PROMPT.md` / the current phase. If ambiguous, ask.
+- When writing user-facing strings or README tone, stay consistent with Conduct’s enterprise/SAP OS story and the deployment-knowledge pitch above.
+
+## Facts discipline (claims about Conduct)
+
+- Only state facts about Conduct that have a public source, and put the source link next to any company claim in the README or docs.
+- Never state Conduct's headcount or team size anywhere. Sources disagree (about 35 in June 2026 press, LinkedIn band 51-200).
+- Named customers: only those Conduct names publicly (Daimler Truck, Heidelberg Materials, Fraport, Rittal, DHL in the Series A blog https://www.conduct.ai/blog/series-a, and Minol-ZENNER https://www.conduct.ai/case-studies/minol). Do not mention CBS; it is unverified.
+- Real customer names may appear only in README/docs prose with a source, never in code, seeds, tests, tenant names or examples. Never model a seed tenant on a real customer (no "Daimler-style" tenant).
+- Conduct's "80% faster analysis / 50% faster delivery / 30% lower cost" figures are the company's own, not independently verified. If quoted, say so.
