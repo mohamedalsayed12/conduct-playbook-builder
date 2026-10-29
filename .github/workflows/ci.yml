@@ -39,6 +39,7 @@ jobs:
       LOG_LEVEL: WARNING
       DATABASE_URL: postgresql+psycopg://conduct:conduct@localhost:5432/conduct_test
       REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: test-only-jwt-secret-value-at-least-32-chars-long!!
 
     steps:
       - name: Check out repository

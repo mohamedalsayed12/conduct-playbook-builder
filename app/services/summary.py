@@ -13,7 +13,7 @@ from app.clock import utc_now
 from app.config import Settings, get_settings
 from app.errors import ValidationAppError
 from app.models import Playbook, StageEvent, User
-from app.models.enums import SapRole, UserStage
+from app.models.enums import SapRole, UserRole, UserStage
 from app.schemas.summary import (
     StuckUserListResponse,
     StuckUserResponse,
@@ -75,18 +75,21 @@ def compute_tenant_summary(
     now = clock()
     stuck_threshold = now - timedelta(days=resolved.stuck_after_days)
 
+    end_user_filter = (
+        User.tenant_id == tenant_id,
+        User.role == UserRole.END_USER,
+    )
+
     users_per_stage = _empty_stage_counts()
     for stage, count in session.execute(
-        select(User.stage, func.count())
-        .where(User.tenant_id == tenant_id)
-        .group_by(User.stage)
+        select(User.stage, func.count()).where(*end_user_filter).group_by(User.stage)
     ):
         users_per_stage[UserStage(stage)] = int(count)
 
     users_per_sap_role_per_stage = _empty_sap_role_matrix()
     for stage, sap_role, count in session.execute(
         select(User.stage, User.sap_role, func.count())
-        .where(User.tenant_id == tenant_id, User.sap_role.is_not(None))
+        .where(*end_user_filter, User.sap_role.is_not(None))
         .group_by(User.stage, User.sap_role)
     ):
         if sap_role is None:
@@ -97,7 +100,8 @@ def compute_tenant_summary(
         select(func.count())
         .select_from(User)
         .where(
-            User.tenant_id == tenant_id,
+            *end_user_filter,
+            User.stage != UserStage.ACTIVE,
             User.stage_changed_at <= stuck_threshold,
         )
     )
@@ -144,6 +148,8 @@ def list_stuck_users(
     stuck_threshold = now - timedelta(days=resolved.stuck_after_days)
     stuck_filter = (
         User.tenant_id == tenant_id,
+        User.role == UserRole.END_USER,
+        User.stage != UserStage.ACTIVE,
         User.stage_changed_at <= stuck_threshold,
     )
 

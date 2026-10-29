@@ -24,6 +24,10 @@ os.environ.setdefault(
     "postgresql+psycopg://conduct:conduct@localhost:5435/conduct_test",
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault(
+    "JWT_SECRET",
+    "test-only-jwt-secret-value-at-least-32-chars-long!!",
+)
 
 from app.api.deps import get_clock, get_db_session
 from app.cache import reset_redis_cache

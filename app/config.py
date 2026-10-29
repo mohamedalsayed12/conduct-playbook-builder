@@ -1,9 +1,18 @@
 """Application settings loaded from environment variables."""
 
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_MIN_JWT_SECRET_LENGTH = 32
+_JWT_SECRET_PLACEHOLDER_FRAGMENTS = (
+    "change-me",
+    "replace-with",
+    "your-own-long-random",
+    "not-a-secret",
+)
 
 
 class Settings(BaseSettings):
@@ -22,13 +31,31 @@ class Settings(BaseSettings):
     invite_expiry_hours: int = 72
     max_page_size: int = 100
     default_page_size: int = 20
-    jwt_secret: str = "change-me-in-production-use-a-long-random-secret-value-64b"  # noqa: S105
+    jwt_secret: str
     jwt_expiry_minutes: int = 30
     stuck_after_days: int = 7
     summary_cache_ttl_seconds: int = 60
+
+    @model_validator(mode="after")
+    def validate_jwt_secret(self) -> Self:
+        """Require a long secret; reject placeholders outside the test environment."""
+        secret = self.jwt_secret
+        if len(secret) < _MIN_JWT_SECRET_LENGTH:
+            message = f"jwt_secret must be at least {_MIN_JWT_SECRET_LENGTH} characters"
+            raise ValueError(message)
+        if self.app_env != "test":
+            lowered = secret.lower()
+            if any(
+                fragment in lowered for fragment in _JWT_SECRET_PLACEHOLDER_FRAGMENTS
+            ):
+                raise ValueError(
+                    "jwt_secret looks like a placeholder; set a real secret"
+                )
+        return self
 
 
 @lru_cache
 def get_settings() -> Settings:
     """Return the cached settings singleton."""
-    return Settings()
+    # jwt_secret is required and supplied via env / .env by pydantic-settings.
+    return Settings()  # type: ignore[call-arg]

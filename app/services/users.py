@@ -32,7 +32,7 @@ def advance_user_stage(
     """Move the user forward exactly one stage and append a StageEvent."""
     require_management_role(actor)
     require_tenant_access(session, actor, tenant_id)
-    user = _get_tenant_user(session, tenant_id=tenant_id, user_id=user_id)
+    user = _lock_tenant_user(session, tenant_id=tenant_id, user_id=user_id)
     from_stage = user.stage
     to_stage = next_stage(from_stage)
     now = clock()
@@ -122,6 +122,22 @@ def _get_tenant_user(
 ) -> User:
     user = session.get(User, user_id)
     if user is None or user.tenant_id != tenant_id:
+        raise NotFoundError(f"User '{user_id}' was not found.")
+    return user
+
+
+def _lock_tenant_user(
+    session: Session,
+    *,
+    tenant_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> User:
+    user = session.scalars(
+        select(User)
+        .where(User.id == user_id, User.tenant_id == tenant_id)
+        .with_for_update()
+    ).first()
+    if user is None:
         raise NotFoundError(f"User '{user_id}' was not found.")
     return user
 

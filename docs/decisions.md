@@ -98,7 +98,7 @@
 ### Invalidate summary cache only after commit
 **Decision:** Delete `summary:v1:{tenant_id}` from Redis only after `session.commit()` returns successfully on invite, accept, and stage advance.
 **Alternatives:** Invalidate inside the transaction before commit; use a write-through cache updated in the same request; skip caching.
-**Why:** If we invalidate before commit, a concurrent summary request can recompute from the old committed rows, repopulate the cache, and leave readers with a stale summary after our commit. Post-commit invalidation means the next read either misses and recomputes from the new rows or serves a pre-change cache that is dropped as soon as the writer finishes. TTL still bounds staleness if Redis delete fails.
+**Why:** If we invalidate before commit, a concurrent summary request can recompute from the old committed rows, repopulate the cache, and leave readers with a stale summary after our commit. Post-commit invalidation drops the key after the writer finishes. A summary computed just before that commit can still be served until the key is deleted or the TTL expires — so staleness is **bounded by the cache TTL** (and by delete latency), not impossible. TTL also bounds staleness if Redis delete fails.
 
 ### Redis is optional for summary reads
 **Decision:** On Redis errors during get/set/delete, log a warning with tenant id only and compute the summary from Postgres.
@@ -111,3 +111,25 @@
 **Decision:** `run_seed` looks up the default playbook, strategist email, tenant names, assignments, and `(tenant_id, email)` users before inserting; existing rows are left unchanged.
 **Alternatives:** Wipe-and-recreate; upsert that rewrites stage history every run.
 **Why:** Strategists re-run `make seed` safely on a shared demo DB without duplicating accounts or resetting progress they may have advanced by hand.
+
+## Phase 7 — Hardening
+
+### Assignments require actor tenant access
+**Decision:** `assign_strategist` calls `require_tenant_access` for the acting strategist before inserting a row.
+**Alternatives:** Allow any strategist to self-assign onto any tenant; require a separate “owner” role.
+**Why:** Without this check an unassigned strategist could grant themselves coverage and read every account. Only strategists who already cover the tenant may add colleagues.
+
+### No default JWT secret; reject placeholders outside tests
+**Decision:** `jwt_secret` is required from the environment (≥32 chars). Placeholder fragments such as `change-me` are rejected unless `APP_ENV=test`. Compose passes `JWT_SECRET` into the API service.
+**Alternatives:** Hardcoded default in `config.py`; soft warning only.
+**Why:** A public default lets anyone forge strategist tokens against a stock Docker deploy.
+
+### Invite acceptance is the only path out of `invited`
+**Decision:** `next_stage` rejects `INVITED`; only `accept_invite` may move a user to `activated`.
+**Alternatives:** Allow strategists to force-activate via advance.
+**Why:** Advance-without-password left invites unusable and skipped password setup.
+
+### Stuck metrics ignore `active` and non–end-users
+**Decision:** Summary stage counts include end users only; stuck count and `/stuck` also exclude `active`.
+**Alternatives:** Count every tenant user including admins; treat completed onboarding as stuck.
+**Why:** Fully onboarded users and customer admins are not “stuck in onboarding.”

@@ -15,6 +15,10 @@ _STAGE_INDEX = {stage: index for index, stage in enumerate(STAGE_ORDER)}
 
 def next_stage(current: UserStage) -> UserStage:
     """Return the only legal next stage, or raise if the user cannot advance."""
+    if current == UserStage.INVITED:
+        raise InvalidStageTransitionError(
+            "Cannot advance an invited user; they must accept their invite."
+        )
     index = _STAGE_INDEX[current]
     if index >= len(STAGE_ORDER) - 1:
         raise InvalidStageTransitionError(
