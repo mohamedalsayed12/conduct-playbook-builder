@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 
 from sqlalchemy.orm import Session
@@ -9,45 +10,32 @@ from sqlalchemy.orm import Session
 from app.models import Playbook, PlaybookStep, User
 from app.models.enums import UserRole, UserStage
 from app.security.passwords import hash_password
+from app.seed_data import DEFAULT_PLAYBOOK_NAME, DEFAULT_PLAYBOOK_STEPS
 
 
 def seed_default_playbook(
     session: Session,
     *,
     now: datetime,
-    name: str = "Default Conduct Playbook",
+    name: str = DEFAULT_PLAYBOOK_NAME,
 ) -> Playbook:
     """Insert the global default playbook used when creating tenants."""
     playbook = Playbook(tenant_id=None, name=name, created_at=now)
     session.add(playbook)
     session.flush()
-    steps = [
-        PlaybookStep(
-            playbook_id=playbook.id,
-            stage=UserStage.ACTIVATED,
-            position=1,
-            title="30-minute guided walkthrough",
-            description="Complete the product walkthrough within 3 days.",
-            due_within_days=3,
-        ),
-        PlaybookStep(
-            playbook_id=playbook.id,
-            stage=UserStage.FIRST_USE,
-            position=1,
-            title="Run first system question",
-            description="Ask the first question on own custom code within 7 days.",
-            due_within_days=7,
-        ),
-        PlaybookStep(
-            playbook_id=playbook.id,
-            stage=UserStage.ACTIVE,
-            position=1,
-            title="Weekly check-in",
-            description="Confirm ongoing usage with the deployment strategist.",
-            due_within_days=14,
-        ),
-    ]
-    session.add_all(steps)
+    session.add_all(
+        [
+            PlaybookStep(
+                playbook_id=playbook.id,
+                stage=step.stage,
+                position=step.position,
+                title=step.title,
+                description=step.description,
+                due_within_days=step.due_within_days,
+            )
+            for step in DEFAULT_PLAYBOOK_STEPS
+        ]
+    )
     session.flush()
     return playbook
 
@@ -78,18 +66,14 @@ def create_strategist(
 def create_customer_admin(
     session: Session,
     *,
-    tenant_id: object,
+    tenant_id: uuid.UUID | str,
     email: str,
     password: str,
     now: datetime,
 ) -> User:
     """Insert a customer admin for a tenant."""
-    import uuid as uuid_module
-
     resolved_tenant_id = (
-        tenant_id
-        if isinstance(tenant_id, uuid_module.UUID)
-        else uuid_module.UUID(str(tenant_id))
+        tenant_id if isinstance(tenant_id, uuid.UUID) else uuid.UUID(str(tenant_id))
     )
     user = User(
         tenant_id=resolved_tenant_id,

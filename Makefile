@@ -1,7 +1,7 @@
 COMPOSE := docker compose
 UV := uv run
 
-.PHONY: up down logs lint typecheck test migrate seed
+.PHONY: up down logs lint typecheck test cov migrate seed
 
 up:
 	$(COMPOSE) up -d --build
@@ -21,6 +21,9 @@ typecheck:
 
 test:
 	$(UV) pytest
+
+cov:
+	$(UV) pytest --cov=app/services --cov=app/security --cov-report=term-missing --cov-fail-under=90
 
 migrate:
 	$(UV) alembic upgrade head

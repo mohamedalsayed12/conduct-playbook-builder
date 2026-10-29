@@ -44,6 +44,8 @@ select = ["E", "F", "I", "B", "UP", "SIM", "S", "N", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "S105", "S106"]
+"scripts/**/*.py" = ["E402"]
+"app/seed_data.py" = ["S105"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

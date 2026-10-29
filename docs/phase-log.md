@@ -43,10 +43,19 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 ## Phase 4 — Rollout summary, stuck users, Redis cache
 
-**Branch / PR:** `phase-4-rollout-summary` · [#10](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/10) · closes #3
+**Branch / PR / release:** `phase-4-rollout-summary` · [#10](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/10) · [release](https://github.com/mohamedalsayed12/conduct-playbook-builder/releases/tag/phase-4-rollout-summary) · closes #3
 
 - `GET /tenants/{id}/summary`: users per stage, sap_role×stage counts, stuck count, average days per stage from `StageEvent` (SQL aggregates).
 - `GET /tenants/{id}/stuck`: paginated stuck users with days stuck and next playbook step.
 - Redis cache `summary:v1:{tenant_id}` with TTL; invalidate only after commit on invite / accept / advance.
 - Redis-down falls back to Postgres; decisions recorded for post-commit invalidation.
 - Tests: cache hit skips DB, invalidation freshness, Redis down, stuck + average-days maths.
+
+## Phase 5 — Seed data and polish
+
+**Branch / PR:** `phase-5-seed-polish` · [#11](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/11) · closes #4
+
+- Idempotent `scripts/seed.py` / `make seed`: Example Manufacturing GmbH + Demo Logistics AG, one strategist on both, admins, 40 end users with StageEvent histories (some stuck), default playbook steps.
+- Shared `app/seed_data.py` constants; factories reuse default playbook steps.
+- Public `get_default_playbook` / `copy_playbook_to_tenant`; `make cov` (≥90% on `services/` + `security/`, measured 95%).
+- Seed idempotency + shape tests; decisions for natural-key seeding.

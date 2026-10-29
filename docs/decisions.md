@@ -104,3 +104,10 @@
 **Decision:** On Redis errors during get/set/delete, log a warning with tenant id only and compute the summary from Postgres.
 **Alternatives:** Fail the request when Redis is down; require Redis for the endpoint.
 **Why:** Strategists need rollout visibility even when the cache is unavailable; Redis must not be a single point of failure for onboarding metrics.
+
+## Phase 5 — Seed data
+
+### Idempotent seed by natural keys
+**Decision:** `run_seed` looks up the default playbook, strategist email, tenant names, assignments, and `(tenant_id, email)` users before inserting; existing rows are left unchanged.
+**Alternatives:** Wipe-and-recreate; upsert that rewrites stage history every run.
+**Why:** Strategists re-run `make seed` safely on a shared demo DB without duplicating accounts or resetting progress they may have advanced by hand.
