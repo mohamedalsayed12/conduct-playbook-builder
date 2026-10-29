@@ -21,7 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(
         title="Conduct Playbook Builder",
-        version="0.4.0",
+        version="0.5.0",
         docs_url="/docs",
         redoc_url="/redoc",
     )

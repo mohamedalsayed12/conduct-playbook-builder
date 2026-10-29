@@ -31,8 +31,8 @@ def create_tenant(
     session.add(tenant)
     session.flush()
 
-    default_playbook = _get_default_playbook(session)
-    _copy_playbook_to_tenant(session, default_playbook, tenant.id, now)
+    default_playbook = get_default_playbook(session)
+    copy_playbook_to_tenant(session, default_playbook, tenant.id, now)
     session.add(
         StrategistAssignment(
             strategist_id=actor.id,
@@ -45,7 +45,7 @@ def create_tenant(
     return tenant
 
 
-def _get_default_playbook(session: Session) -> Playbook:
+def get_default_playbook(session: Session) -> Playbook:
     statement = (
         select(Playbook)
         .where(Playbook.tenant_id.is_(None))
@@ -61,7 +61,7 @@ def _get_default_playbook(session: Session) -> Playbook:
     return playbook
 
 
-def _copy_playbook_to_tenant(
+def copy_playbook_to_tenant(
     session: Session,
     source: Playbook,
     tenant_id: uuid.UUID,
