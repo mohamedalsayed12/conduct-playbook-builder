@@ -89,3 +89,6 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 - `GET /tenants` lists tenants from `accessible_tenant_ids` (strategist assignments / admin’s own); isolation tests included.
 - Dashboard login uses account dropdown filled from `GET /tenants` after sign-in.
 - README screenshot + `/dashboard` link.
+- Seed: Demo Logistics AG is mostly `active` (2 stuck) and Example Manufacturing GmbH is spread across early stages (8 stuck). Re-running seed still skips existing users.
+- Login without `tenant_id` succeeds only for a unique email; a duplicate email across tenants returns the same generic 401 as a bad password (`decisions.md`).
+- After sign-in, failed summary/stuck/refresh requests show on `#dashboard-error`, not the hidden login panel.
