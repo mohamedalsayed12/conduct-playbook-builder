@@ -53,7 +53,7 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 ## Phase 5 — Seed data and polish
 
-**Branch / PR:** `phase-5-seed-polish` · [#11](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/11) · closes #4
+**Branch / PR / release:** `phase-5-seed-polish` · [#11](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/11) · [release](https://github.com/mohamedalsayed12/conduct-playbook-builder/releases/tag/phase-5-seed-polish) · closes #4
 
 - Idempotent `scripts/seed.py` / `make seed`: Example Manufacturing GmbH + Demo Logistics AG, one strategist on both, admins, 40 end users with StageEvent histories (some stuck), default playbook steps.
 - Shared `app/seed_data.py` constants; factories reuse default playbook steps.
