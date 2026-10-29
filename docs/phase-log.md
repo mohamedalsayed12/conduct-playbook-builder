@@ -76,3 +76,7 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 - Advance blocked from `invited` (invite accept only); stuck/summary exclude `active` and non–end-users.
 - Duplicate invite email → 409; `SELECT … FOR UPDATE` on accept/advance; emails lowercased on invite/login.
 - `decisions.md`: summary staleness bounded by TTL.
+
+## Follow-up — OpenQodex workflow
+
+- Added `.github/workflows/openqodex.yml`: scanners-only on every PR, SARIF to code scanning, `block-on-severity: major`, `fail-on-tool-error: true`, AI review off.
