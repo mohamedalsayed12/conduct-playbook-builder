@@ -18,6 +18,7 @@ from app.security.invite_tokens import generate_invite_token, hash_invite_token
 from app.security.passwords import hash_password
 from app.services.scoping import require_management_role, require_tenant_access
 from app.services.stages import assert_transition_allowed
+from app.services.summary import invalidate_tenant_summary_after_commit
 
 Clock = Callable[[], datetime]
 
@@ -71,6 +72,7 @@ def create_invite(
         )
     )
     session.commit()
+    invalidate_tenant_summary_after_commit(tenant_id)
     session.refresh(invite)
     session.refresh(user)
     return invite, user, raw_token
@@ -89,6 +91,7 @@ def accept_invite(
     user = session.get(User, invite.user_id)
     if user is None or user.tenant_id is None:
         raise InviteTokenInvalidError(_GENERIC_INVITE_ERROR)
+    tenant_id = user.tenant_id
 
     assert_transition_allowed(user.stage, UserStage.ACTIVATED)
     from_stage = user.stage
@@ -98,7 +101,7 @@ def accept_invite(
     invite.used_at = now
     session.add(
         StageEvent(
-            tenant_id=user.tenant_id,
+            tenant_id=tenant_id,
             user_id=user.id,
             from_stage=from_stage,
             to_stage=UserStage.ACTIVATED,
@@ -106,6 +109,7 @@ def accept_invite(
         )
     )
     session.commit()
+    invalidate_tenant_summary_after_commit(tenant_id)
     session.refresh(user)
     return user
 

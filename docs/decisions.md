@@ -92,3 +92,15 @@
 **Decision:** Issue and verify tokens with HS256 only via PyJWT `algorithms=["HS256"]`.
 **Alternatives:** Asymmetric RS256; accept multiple HMAC algorithms.
 **Why:** HS256 matches the approved stack (shared secret in settings). An allow-list rejects `alg=none` and algorithm-confusion attacks.
+
+## Phase 4 — Rollout summary
+
+### Invalidate summary cache only after commit
+**Decision:** Delete `summary:v1:{tenant_id}` from Redis only after `session.commit()` returns successfully on invite, accept, and stage advance.
+**Alternatives:** Invalidate inside the transaction before commit; use a write-through cache updated in the same request; skip caching.
+**Why:** If we invalidate before commit, a concurrent summary request can recompute from the old committed rows, repopulate the cache, and leave readers with a stale summary after our commit. Post-commit invalidation means the next read either misses and recomputes from the new rows or serves a pre-change cache that is dropped as soon as the writer finishes. TTL still bounds staleness if Redis delete fails.
+
+### Redis is optional for summary reads
+**Decision:** On Redis errors during get/set/delete, log a warning with tenant id only and compute the summary from Postgres.
+**Alternatives:** Fail the request when Redis is down; require Redis for the endpoint.
+**Why:** Strategists need rollout visibility even when the cache is unavailable; Redis must not be a single point of failure for onboarding metrics.

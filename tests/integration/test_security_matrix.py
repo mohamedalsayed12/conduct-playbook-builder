@@ -25,6 +25,8 @@ def _tenant_b_endpoints(
     return [
         ("GET", f"/tenants/{tenant_b}/users"),
         ("GET", f"/tenants/{tenant_b}/playbook"),
+        ("GET", f"/tenants/{tenant_b}/summary"),
+        ("GET", f"/tenants/{tenant_b}/stuck"),
         ("POST", f"/tenants/{tenant_b}/invites"),
         ("POST", f"/tenants/{tenant_b}/users/{user_id}/advance"),
         ("GET", f"/tenants/{tenant_b}/users/{user_id}/next-steps"),
