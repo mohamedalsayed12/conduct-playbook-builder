@@ -62,7 +62,7 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 ## Phase 6 — README
 
-**Branch:** `phase-6-readme` (PR/release links filled at merge) · closes #5
+**Branch / PR:** `phase-6-readme` · [#12](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/12) · closes #5
 
 - Full README: pitch, why-it-exists (as assumption), features, Mermaid architecture, security model, quick start + curl walkthrough, testing, decisions link, next steps.
 - Verified host commands: `make up`, `make migrate`, `make seed`, health/auth/tenant/summary curls against local API.
