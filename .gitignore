@@ -21,6 +21,9 @@ venv/
 # uv / tooling
 uv.lock.bak
 
+# Local scratch scripts
+_tmp_*.py
+
 # IDE / OS
 .idea/
 .vscode/
