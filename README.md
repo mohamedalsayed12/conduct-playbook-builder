@@ -19,6 +19,9 @@ This tool captures that deployment knowledge as reusable **playbooks** and gives
 - **Redis cache** for summaries (`summary:v1:{tenant_id}`), invalidated **after** DB commit; Postgres fallback if Redis is down
 - **Security** — HS256 JWTs, tenant scoping, invite token hashing, no personal data in logs
 - **Seed data** — fictional demo tenants via `make seed` (idempotent)
+- **Rollout dashboard** — browser UI at [`/dashboard`](http://localhost:8000/dashboard) (summary, funnel, stuck users)
+
+![Rollout dashboard](docs/screenshots/dashboard.png)
 
 ## Architecture
 
@@ -63,6 +66,7 @@ make seed
 ```
 
 - API: [http://localhost:8000](http://localhost:8000)
+- Dashboard: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
 - OpenAPI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Health: [http://localhost:8000/health](http://localhost:8000/health)
 

@@ -80,3 +80,12 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 ## Follow-up — OpenQodex workflow
 
 - Added `.github/workflows/openqodex.yml`: scanners-only on every PR, SARIF to code scanning, `block-on-severity: major`, `fail-on-tool-error: true`, AI review off.
+
+## Phase 8 — Rollout dashboard
+
+**Branch:** `phase-8-dashboard`
+
+- Static `app/static/dashboard.html` served at `GET /dashboard` (`FileResponse`, omitted from OpenAPI).
+- `GET /tenants` lists tenants from `accessible_tenant_ids` (strategist assignments / admin’s own); isolation tests included.
+- Dashboard login uses account dropdown filled from `GET /tenants` after sign-in.
+- README screenshot + `/dashboard` link.
