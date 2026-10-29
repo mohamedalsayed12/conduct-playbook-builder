@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rollout Dashboard · Conduct Playbook Builder</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #14171c; --muted: #5d6673;
+    --line: #e3e6eb; --accent: #2f5bea; --accent-soft: #e8eefe;
+    --warn: #b4530d; --warn-soft: #fdf0e4; --ok: #17803d; --ok-soft: #e6f5ec;
+    --radius: 10px;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --panel: #171a20; --ink: #e8eaee; --muted: #9aa3b0;
+      --line: #2a2f38; --accent: #7c9bff; --accent-soft: #1d2540;
+      --warn: #f0a868; --warn-soft: #33241a; --ok: #6fd391; --ok-soft: #16291e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--sans); }
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  .brand { font-weight: 650; letter-spacing: -0.01em; }
+  .brand span { color: var(--muted); font-weight: 400; }
+  .meta { color: var(--muted); font-size: 13px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 14px; }
+  button, input {
+    font: inherit; border-radius: 8px; border: 1px solid var(--line);
+    padding: 8px 12px; background: var(--panel); color: var(--ink);
+  }
+  input { width: 100%; }
+  input:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.link { border: none; background: none; color: var(--accent); padding: 0; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+  .roles { display: flex; gap: 16px; }
+  .roles label { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--ink); font-size: 14px; }
+  .roles input { width: auto; }
+
+  /* Login */
+  #login { max-width: 380px; margin: 48px auto; }
+  #login h1 { font-size: 20px; margin: 0 0 4px; }
+  #login p { color: var(--muted); margin: 0 0 8px; }
+  .row { display: flex; gap: 8px; margin-top: 18px; }
+  .row button { flex: 1; }
+  .error { color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 8px 12px; margin-top: 12px; display: none; }
+
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi .label { color: var(--muted); font-size: 13px; }
+  .kpi .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .kpi .sub { color: var(--muted); font-size: 12px; }
+  .kpi.warn .value { color: var(--warn); }
+
+  .grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* Funnel */
+  .stage { display: grid; grid-template-columns: 92px 1fr 64px; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .stage .name { font-weight: 550; text-transform: capitalize; }
+  .bar { height: 26px; background: var(--accent-soft); border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--accent); border-radius: 6px; min-width: 2px; transition: width .4s ease; }
+  .stage .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .stage .avg { grid-column: 2 / 4; color: var(--muted); font-size: 12px; margin-top: -8px; }
+
+  /* Matrix + tables */
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 550; font-size: 12px; }
+  .matrix td, .matrix th { text-align: center; }
+  .matrix td:first-child, .matrix th:first-child { text-align: left; text-transform: capitalize; }
+  .cell { display: inline-block; min-width: 34px; padding: 3px 6px; border-radius: 6px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; text-transform: capitalize; background: var(--warn-soft); color: var(--warn); }
+  .days { font-weight: 600; color: var(--warn); }
+  .step-title { font-weight: 550; }
+  .step-due { color: var(--muted); font-size: 12px; }
+  .email { font-family: var(--mono); font-size: 13px; }
+  .empty { color: var(--muted); padding: 16px 0; }
+  .demo-banner { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 8px 12px; margin-bottom: 16px; font-size: 13px; }
+  .hidden { display: none !important; }
+
+  .matrix th { text-transform: capitalize; }
+  .table-scroll { overflow-x: auto; }
+  @media (max-width: 860px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+    header { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .brand span { display: none; }
+    .stuck-table th:nth-child(4), .stuck-table td:nth-child(4) { display: none; }
+  }
+  @media (max-width: 560px) {
+    main { padding: 16px 16px 40px; }
+    .panel { padding: 16px; }
+    .kpi .value { font-size: 24px; }
+    /* Stack each stuck user as a card instead of a wide table row. */
+    .stuck-table thead { display: none; }
+    .stuck-table tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .stuck-table td { border: none; padding: 0; }
+    .stuck-table td:nth-child(1) { grid-column: 1 / -1; overflow-wrap: anywhere; }
+    .stuck-table td:nth-child(5) { grid-column: 1 / -1; margin-top: 4px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Playbook Builder <span>· Rollout dashboard</span></div>
+  <div class="meta">
+    <span id="tenant-label"></span>
+    <span id="computed-label"></span>
+    <button id="refresh" class="hidden">Refresh</button>
+    <button id="logout" class="link hidden">Sign out</button>
+  </div>
+</header>
+
+<main>
+  <!-- Login -->
+  <section id="login" class="panel">
+    <h1>Sign in</h1>
+    <p>Strategists sign in without a tenant, then choose an account. Customer admins enter their tenant ID.</p>
+    <form id="login-form" autocomplete="on">
+      <label for="email">Email</label>
+      <input id="email" type="email" required autocomplete="username">
+      <label for="password">Password</label>
+      <input id="password" type="password" required autocomplete="current-password">
+      <label>Signing in as</label>
+      <div class="roles" role="radiogroup">
+        <label><input type="radio" name="role" value="strategist" checked> Strategist</label>
+        <label><input type="radio" name="role" value="customer_admin"> Customer admin</label>
+      </div>
+      <label for="tenant">Tenant ID <span style="font-weight:400">(the account to open)</span></label>
+      <input id="tenant" required placeholder="e.g. 9c808d70-…" spellcheck="false">
+      <div class="row">
+        <button type="submit" class="primary">Sign in</button>
+        <button type="button" id="demo">View demo data</button>
+      </div>
+      <div id="login-error" class="error" role="alert"></div>
+    </form>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard" class="hidden">
+    <div id="demo-banner" class="demo-banner hidden">Demo mode: fictional data, no API calls.</div>
+
+    <div class="kpis">
+      <div class="panel kpi"><div class="label">End users</div><div class="value" id="kpi-total">–</div><div class="sub">in this account</div></div>
+      <div class="panel kpi"><div class="label">Fully active</div><div class="value" id="kpi-active">–</div><div class="sub" id="kpi-active-sub"></div></div>
+      <div class="panel kpi warn"><div class="label">Stuck</div><div class="value" id="kpi-stuck">–</div><div class="sub">no stage change in 7+ days</div></div>
+      <div class="panel kpi"><div class="label">Avg. days to active</div><div class="value" id="kpi-days">–</div><div class="sub">invited → active</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Onboarding funnel</h2>
+        <div id="funnel"></div>
+      </div>
+      <div class="panel">
+        <h2>By SAP role</h2>
+        <table class="matrix" id="matrix"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Stuck users · next playbook step</h2>
+      <div class="table-scroll">
+        <table class="stuck-table">
+          <thead><tr><th>User</th><th>Stage</th><th>Days stuck</th><th>Since</th><th>Next step</th></tr></thead>
+          <tbody id="stuck-body"></tbody>
+        </table>
+      </div>
+      <div id="stuck-empty" class="empty hidden">Nobody is stuck. Every user has moved stage in the last 7 days.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const STAGES = ["invited", "activated", "first_use", "active"];
+const SAP_ROLES = ["developer", "analyst", "process_owner", "architect"];
+const label = (s) => s.replace("_", " ");
+
+// The JWT lives only in memory: closing the tab signs the user out, and
+// there is nothing in localStorage for an injected script to steal.
+const state = { token: null, tenantId: null, demo: false };
+
+const $ = (id) => document.getElementById(id);
+
+function el(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text; // textContent, never innerHTML: emails are user data
+  if (className) node.className = className;
+  return node;
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (response.status === 401) {
+    if (options.isLogin) throw new Error("Invalid email or password.");
+    signOut("Your session expired. Please sign in again.");
+    throw new Error("unauthorised");
+  }
+  if (response.status === 404) throw new Error("That tenant doesn't exist or you don't have access to it.");
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(typeof body.detail === "string" ? body.detail : `Request failed (${response.status}).`);
+  }
+  return response.json();
+}
+
+async function signIn(event) {
+  event.preventDefault();
+  showError("");
+  const tenantId = $("tenant").value.trim();
+  const isAdmin = document.querySelector('input[name="role"]:checked').value === "customer_admin";
+  // Strategists log in without a tenant (they cover several); customer admins log in against theirs.
+  const body = { email: $("email").value.trim(), password: $("password").value };
+  if (isAdmin) body.tenant_id = tenantId;
+  try {
+    const token = await api("/auth/token", { method: "POST", body: JSON.stringify(body), isLogin: true });
+    state.token = token.access_token;
+    state.tenantId = token.tenant_id || tenantId;
+    $("password").value = "";
+    await loadDashboard();
+  } catch (err) {
+    state.token = null;
+    state.tenantId = null;
+    if (err.message !== "unauthorised") showError(err.message);
+  }
+}
+
+async function loadDashboard() {
+  const [summary, stuck] = await Promise.all([
+    api(`/tenants/${encodeURIComponent(state.tenantId)}/summary`),
+    api(`/tenants/${encodeURIComponent(state.tenantId)}/stuck?limit=25`),
+  ]);
+  render(summary, stuck);
+}
+
+function render(summary, stuck) {
+  $("login").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  $("refresh").classList.toggle("hidden", state.demo);
+  $("logout").classList.remove("hidden");
+  $("demo-banner").classList.toggle("hidden", !state.demo);
+  $("tenant-label").textContent = state.demo ? "Example Manufacturing GmbH" : `Tenant ${state.tenantId.slice(0, 8)}…`;
+  $("computed-label").textContent = `Updated ${new Date(summary.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
+  const counts = summary.users_per_stage;
+  const total = STAGES.reduce((sum, s) => sum + (counts[s] || 0), 0);
+  const avg = summary.average_days_per_stage;
+  const daysToActive = ["invited", "activated", "first_use"].reduce((sum, s) => sum + (avg[s] || 0), 0);
+
+  $("kpi-total").textContent = total;
+  $("kpi-active").textContent = total ? `${Math.round((counts.active || 0) / total * 100)}%` : "–";
+  $("kpi-active-sub").textContent = `${counts.active || 0} of ${total} users`;
+  $("kpi-stuck").textContent = summary.stuck_count;
+  $("kpi-days").textContent = daysToActive ? daysToActive.toFixed(1) : "–";
+
+  // Funnel
+  const funnel = $("funnel");
+  funnel.replaceChildren();
+  const max = Math.max(1, ...STAGES.map((s) => counts[s] || 0));
+  for (const stage of STAGES) {
+    const row = el("div", undefined, "stage");
+    const bar = el("div", undefined, "bar");
+    const fill = el("div");
+    fill.style.width = `${((counts[stage] || 0) / max) * 100}%`;
+    bar.append(fill);
+    row.append(el("div", label(stage), "name"), bar, el("div", String(counts[stage] || 0), "num"));
+    if (stage !== "active") row.append(el("div", `avg. ${(avg[stage] || 0).toFixed(1)} days in stage`, "avg"));
+    funnel.append(row);
+  }
+
+  // SAP role x stage matrix, shaded by share of the row
+  const matrix = $("matrix");
+  matrix.replaceChildren();
+  const head = el("tr");
+  head.append(el("th", "Role"), ...STAGES.map((s) => el("th", label(s))));
+  const thead = el("thead"); thead.append(head);
+  const tbody = el("tbody");
+  for (const role of SAP_ROLES) {
+    const tr = el("tr");
+    tr.append(el("td", label(role)));
+    const rowTotal = STAGES.reduce((sum, s) => sum + ((summary.users_per_sap_role_per_stage[s] || {})[role] || 0), 0) || 1;
+    for (const stage of STAGES) {
+      const n = (summary.users_per_sap_role_per_stage[stage] || {})[role] || 0;
+      const td = el("td");
+      const cell = el("span", String(n), "cell");
+      cell.style.background = `color-mix(in srgb, var(--accent) ${Math.round((n / rowTotal) * 55)}%, transparent)`;
+      td.append(cell);
+      tr.append(td);
+    }
+    tbody.append(tr);
+  }
+  matrix.append(thead, tbody);
+
+  // Stuck users
+  const body = $("stuck-body");
+  body.replaceChildren();
+  $("stuck-empty").classList.toggle("hidden", stuck.items.length > 0);
+  for (const user of stuck.items) {
+    const tr = el("tr");
+    const stageTd = el("td"); stageTd.append(el("span", label(user.stage), "pill"));
+    const stepTd = el("td");
+    if (user.next_step) {
+      stepTd.append(el("div", user.next_step.title, "step-title"), el("div", `due within ${user.next_step.due_within_days} days`, "step-due"));
+    } else {
+      stepTd.append(el("div", "Follow up: invite not yet accepted", "step-due"));
+    }
+    tr.append(
+      el("td", user.email, "email"),
+      stageTd,
+      el("td", `${Math.floor(user.days_stuck)} days`, "days"),
+      el("td", new Date(user.stage_changed_at).toLocaleDateString()),
+      stepTd,
+    );
+    body.append(tr);
+  }
+}
+
+function signOut(message) {
+  Object.assign(state, { token: null, tenantId: null, demo: false });
+  $("dashboard").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  ["refresh", "logout"].forEach((id) => $(id).classList.add("hidden"));
+  $("tenant-label").textContent = "";
+  $("computed-label").textContent = "";
+  showError(message || "");
+}
+
+function showError(message) {
+  $("login-error").textContent = message;
+  $("login-error").style.display = message ? "block" : "none";
+}
+
+// Fictional demo data in the exact shape of TenantSummaryResponse / StuckUserListResponse.
+function demoData() {
+  const now = Date.now();
+  const daysAgo = (d) => new Date(now - d * 86400000).toISOString();
+  const step = (stage, title, due) => ({ id: crypto.randomUUID(), stage, position: 1, title, description: "", due_within_days: due });
+  return {
+    summary: {
+      tenant_id: "demo",
+      users_per_stage: { invited: 6, activated: 5, first_use: 4, active: 5 },
+      users_per_sap_role_per_stage: {
+        invited:   { developer: 1, analyst: 2, process_owner: 2, architect: 1 },
+        activated: { developer: 1, analyst: 1, process_owner: 2, architect: 1 },
+        first_use: { developer: 2, analyst: 1, process_owner: 0, architect: 1 },
+        active:    { developer: 3, analyst: 1, process_owner: 0, architect: 1 },
+      },
+      stuck_count: 4,
+      average_days_per_stage: { invited: 3.2, activated: 4.6, first_use: 6.1, active: 9.4 },
+      computed_at: new Date().toISOString(),
+    },
+    stuck: {
+      total: 4, limit: 25, offset: 0,
+      items: [
+        { user_id: "1", email: "mfg-process-owner-03@example.com", stage: "activated", stage_changed_at: daysAgo(12), days_stuck: 12.3, next_step: step("activated", "30-minute guided walkthrough", 3) },
+        { user_id: "2", email: "mfg-analyst-07@example.com", stage: "invited", stage_changed_at: daysAgo(10), days_stuck: 10.1, next_step: null },
+        { user_id: "3", email: "mfg-process-owner-11@example.com", stage: "first_use", stage_changed_at: daysAgo(9), days_stuck: 9.4, next_step: step("first_use", "Run first system question", 7) },
+        { user_id: "4", email: "mfg-architect-02@example.com", stage: "activated", stage_changed_at: daysAgo(8), days_stuck: 8.0, next_step: step("activated", "30-minute guided walkthrough", 3) },
+      ],
+    },
+  };
+}
+
+$("login-form").addEventListener("submit", signIn);
+$("demo").addEventListener("click", () => {
+  state.demo = true;
+  const { summary, stuck } = demoData();
+  render(summary, stuck);
+});
+$("logout").addEventListener("click", () => signOut());
+$("refresh").addEventListener("click", () => loadDashboard().catch((err) => showError(err.message)));
+</script>
+</body>
+</html>
