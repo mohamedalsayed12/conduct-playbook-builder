@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.clock import utc_now
 from app.errors import ConflictError, ForbiddenError, NotFoundError, ValidationAppError
-from app.models import StrategistAssignment, Tenant, User
+from app.models import StrategistAssignment, User
 from app.models.enums import UserRole
 from app.services.scoping import require_tenant_access
 
@@ -33,9 +33,8 @@ def assign_strategist(
         require_tenant_access(session, actor, tenant_id)
         raise ForbiddenError("Only strategists may perform this action.")
 
-    tenant = session.get(Tenant, tenant_id)
-    if tenant is None:
-        raise NotFoundError(f"Tenant '{tenant_id}' was not found.")
+    # Actor must already cover the tenant (blocks self-assign onto foreign accounts).
+    require_tenant_access(session, actor, tenant_id)
 
     strategist = session.get(User, strategist_id)
     if strategist is None or strategist.role != UserRole.STRATEGIST:

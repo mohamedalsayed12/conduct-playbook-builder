@@ -15,6 +15,7 @@ from app.config import Settings, get_settings
 from app.errors import AuthenticationError
 from app.models import User
 from app.models.enums import UserRole
+from app.security.emails import normalize_email
 from app.security.jwt import create_access_token
 from app.security.passwords import verify_password
 
@@ -35,7 +36,11 @@ def issue_access_token(
 ) -> tuple[str, User]:
     """Validate credentials and return a JWT plus the authenticated user."""
     resolved = settings if settings is not None else get_settings()
-    user = _find_user_for_login(session, email=email, tenant_id=tenant_id)
+    user = _find_user_for_login(
+        session,
+        email=normalize_email(email),
+        tenant_id=tenant_id,
+    )
     if (
         user is None
         or user.password_hash is None

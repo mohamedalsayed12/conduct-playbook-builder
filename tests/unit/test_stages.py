@@ -10,7 +10,6 @@ from app.services.stages import STAGE_ORDER, assert_transition_allowed, next_sta
 @pytest.mark.parametrize(
     ("current", "expected"),
     [
-        (UserStage.INVITED, UserStage.ACTIVATED),
         (UserStage.ACTIVATED, UserStage.FIRST_USE),
         (UserStage.FIRST_USE, UserStage.ACTIVE),
     ],
@@ -18,6 +17,15 @@ from app.services.stages import STAGE_ORDER, assert_transition_allowed, next_sta
 def test_valid_next_stage(current: UserStage, expected: UserStage) -> None:
     assert next_stage(current) == expected
     assert_transition_allowed(current, expected)
+
+
+def test_invite_accept_transition_still_allowed() -> None:
+    assert_transition_allowed(UserStage.INVITED, UserStage.ACTIVATED)
+
+
+def test_cannot_advance_from_invited_via_next_stage() -> None:
+    with pytest.raises(InvalidStageTransitionError):
+        next_stage(UserStage.INVITED)
 
 
 def test_cannot_advance_past_active() -> None:

@@ -66,3 +66,13 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 - Full README: pitch, why-it-exists (as assumption), features, Mermaid architecture, security model, quick start + curl walkthrough, testing, decisions link, next steps.
 - Verified host commands: `make up`, `make migrate`, `make seed`, health/auth/tenant/summary curls against local API.
+
+## Phase 7 — Hardening
+
+**Branch:** `phase-7-hardening`
+
+- Assignment requires actor `require_tenant_access` (blocks self-assign onto foreign tenants).
+- Required `JWT_SECRET` (≥32 chars, no placeholders outside test); compose + CI pass it; removed short-key warning filter.
+- Advance blocked from `invited` (invite accept only); stuck/summary exclude `active` and non–end-users.
+- Duplicate invite email → 409; `SELECT … FOR UPDATE` on accept/advance; emails lowercased on invite/login.
+- `decisions.md`: summary staleness bounded by TTL.

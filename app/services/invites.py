@@ -7,13 +7,15 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.clock import utc_now
 from app.config import Settings, get_settings
-from app.errors import InviteTokenInvalidError
+from app.errors import ConflictError, InviteTokenInvalidError
 from app.models import Invite, StageEvent, User
 from app.models.enums import SapRole, UserRole, UserStage
+from app.security.emails import normalize_email
 from app.security.invite_tokens import generate_invite_token, hash_invite_token
 from app.security.passwords import hash_password
 from app.services.scoping import require_management_role, require_tenant_access
@@ -40,10 +42,20 @@ def create_invite(
     require_tenant_access(session, actor, tenant_id)
     resolved = settings if settings is not None else get_settings()
     now = clock()
+    normalized_email = normalize_email(email)
+
+    existing = session.scalars(
+        select(User).where(
+            User.tenant_id == tenant_id,
+            User.email == normalized_email,
+        )
+    ).first()
+    if existing is not None:
+        raise ConflictError("A user with this email already exists in the tenant.")
 
     user = User(
         tenant_id=tenant_id,
-        email=email,
+        email=normalized_email,
         password_hash=None,
         role=UserRole.END_USER,
         sap_role=sap_role,
@@ -52,7 +64,12 @@ def create_invite(
         created_at=now,
     )
     session.add(user)
-    session.flush()
+    try:
+        session.flush()
+    except IntegrityError as exc:
+        raise ConflictError(
+            "A user with this email already exists in the tenant."
+        ) from exc
 
     raw_token = generate_invite_token()
     invite = Invite(
@@ -88,7 +105,9 @@ def accept_invite(
     """Accept an invite: hash password, mark used, activate user, write StageEvent."""
     now = clock()
     invite = _load_usable_invite(session, raw_token=raw_token, now=now)
-    user = session.get(User, invite.user_id)
+    user = session.scalars(
+        select(User).where(User.id == invite.user_id).with_for_update()
+    ).first()
     if user is None or user.tenant_id is None:
         raise InviteTokenInvalidError(_GENERIC_INVITE_ERROR)
     tenant_id = user.tenant_id
@@ -122,7 +141,7 @@ def _load_usable_invite(
 ) -> Invite:
     token_hash = hash_invite_token(raw_token)
     invite = session.scalars(
-        select(Invite).where(Invite.token_hash == token_hash)
+        select(Invite).where(Invite.token_hash == token_hash).with_for_update()
     ).first()
     if invite is None or invite.used_at is not None or invite.expires_at <= now:
         raise InviteTokenInvalidError(_GENERIC_INVITE_ERROR)
