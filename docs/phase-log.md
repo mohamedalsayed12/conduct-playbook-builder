@@ -69,10 +69,10 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 ## Phase 7 — Hardening
 
-**Branch:** `phase-7-hardening`
+**Branch / PR / release:** `phase-7-hardening` · [#13](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/13) · [release](https://github.com/mohamedalsayed12/conduct-playbook-builder/releases/tag/phase-7-hardening)
 
 - Assignment requires actor `require_tenant_access` (blocks self-assign onto foreign tenants).
-- Required `JWT_SECRET` (≥32 chars, no placeholders outside test); compose + CI pass it; removed short-key warning filter.
+- Required `JWT_SECRET` (≥32 chars, no placeholders outside test; reject `local-dev`/`do-not-use` in production); compose + CI pass it.
 - Advance blocked from `invited` (invite accept only); stuck/summary exclude `active` and non–end-users.
 - Duplicate invite email → 409; `SELECT … FOR UPDATE` on accept/advance; emails lowercased on invite/login.
 - `decisions.md`: summary staleness bounded by TTL.
