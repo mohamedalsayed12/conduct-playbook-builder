@@ -1,0 +1,23 @@
+name: OpenQodex
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: openqodex/openqodex@v0
+        with:
+          # Scanners only — no Anthropic key / AI review (see docs/decisions.md).
+          review: off
+          block-on-severity: major
+          fail-on-tool-error: true
