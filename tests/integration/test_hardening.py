@@ -62,6 +62,22 @@ def test_jwt_secret_requires_minimum_length_in_test() -> None:
         Settings(app_env="test", jwt_secret="too-short")
 
 
+def test_jwt_secret_rejects_local_dev_example_in_production() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            app_env="production",
+            jwt_secret="local-dev-only-do-not-use-in-production-conduct-playbook-2026",
+        )
+
+
+def test_jwt_secret_allows_local_dev_example_in_development() -> None:
+    settings = Settings(
+        app_env="development",
+        jwt_secret="local-dev-only-do-not-use-in-production-conduct-playbook-2026",
+    )
+    assert "local-dev" in settings.jwt_secret
+
+
 def test_advance_from_invited_is_rejected(
     client: TestClient,
     db_session: Session,

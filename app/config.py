@@ -13,6 +13,11 @@ _JWT_SECRET_PLACEHOLDER_FRAGMENTS = (
     "your-own-long-random",
     "not-a-secret",
 )
+# Rejected only in production so .env.example can keep a local-dev secret.
+_JWT_SECRET_PRODUCTION_FORBIDDEN_FRAGMENTS = (
+    "do-not-use",
+    "local-dev",
+)
 
 
 class Settings(BaseSettings):
@@ -43,14 +48,18 @@ class Settings(BaseSettings):
         if len(secret) < _MIN_JWT_SECRET_LENGTH:
             message = f"jwt_secret must be at least {_MIN_JWT_SECRET_LENGTH} characters"
             raise ValueError(message)
-        if self.app_env != "test":
-            lowered = secret.lower()
-            if any(
-                fragment in lowered for fragment in _JWT_SECRET_PLACEHOLDER_FRAGMENTS
-            ):
-                raise ValueError(
-                    "jwt_secret looks like a placeholder; set a real secret"
-                )
+        lowered = secret.lower()
+        if self.app_env != "test" and any(
+            fragment in lowered for fragment in _JWT_SECRET_PLACEHOLDER_FRAGMENTS
+        ):
+            raise ValueError("jwt_secret looks like a placeholder; set a real secret")
+        if self.app_env == "production" and any(
+            fragment in lowered
+            for fragment in _JWT_SECRET_PRODUCTION_FORBIDDEN_FRAGMENTS
+        ):
+            raise ValueError(
+                "jwt_secret must not use a local-dev or example value in production"
+            )
         return self
 
 

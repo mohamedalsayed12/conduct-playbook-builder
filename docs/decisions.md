@@ -120,9 +120,9 @@
 **Why:** Without this check an unassigned strategist could grant themselves coverage and read every account. Only strategists who already cover the tenant may add colleagues.
 
 ### No default JWT secret; reject placeholders outside tests
-**Decision:** `jwt_secret` is required from the environment (≥32 chars). Placeholder fragments such as `change-me` are rejected unless `APP_ENV=test`. Compose passes `JWT_SECRET` into the API service.
-**Alternatives:** Hardcoded default in `config.py`; soft warning only.
-**Why:** A public default lets anyone forge strategist tokens against a stock Docker deploy.
+**Decision:** `jwt_secret` is required from the environment (≥32 chars). Placeholder fragments such as `change-me` are rejected unless `APP_ENV=test`. In `production`, fragments such as `local-dev` and `do-not-use` are also rejected so the `.env.example` value cannot be copied into a live deploy. Compose passes `JWT_SECRET` into the API service.
+**Alternatives:** Hardcoded default in `config.py`; soft warning only; reject local-dev secrets in development too.
+**Why:** A public default lets anyone forge strategist tokens against a stock Docker deploy. Development still works with `.env.example`; production must use a unique secret.
 
 ### Invite acceptance is the only path out of `invited`
 **Decision:** `next_stage` rejects `INVITED`; only `accept_invite` may move a user to `activated`.
