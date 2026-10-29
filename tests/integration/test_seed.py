@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
-
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -14,8 +12,11 @@ from app.seed_data import (
     TENANT_MANUFACTURING,
     logistics_end_users,
     manufacturing_end_users,
+    stage_counts,
+    stuck_end_user_count,
 )
 from app.services.seed import count_seed_end_users, run_seed
+from app.services.summary import compute_tenant_summary
 from tests.conftest import FrozenClock
 
 
@@ -44,15 +45,18 @@ def test_seed_creates_expected_shape(
     assert count_seed_end_users(db_session, mfg_id) == 20
     assert count_seed_end_users(db_session, log_id) == 20
 
-    stuck = db_session.scalar(
-        select(func.count())
-        .select_from(User)
-        .where(
-            User.role == UserRole.END_USER,
-            User.stage_changed_at <= frozen_clock() - timedelta(days=7),
-        )
+    mfg_summary = compute_tenant_summary(
+        db_session, tenant_id=mfg_id, clock=frozen_clock
     )
-    assert stuck is not None and stuck >= 1
+    log_summary = compute_tenant_summary(
+        db_session, tenant_id=log_id, clock=frozen_clock
+    )
+    assert mfg_summary.users_per_stage == stage_counts(manufacturing_end_users())
+    assert log_summary.users_per_stage == stage_counts(logistics_end_users())
+    assert mfg_summary.users_per_stage != log_summary.users_per_stage
+    assert mfg_summary.stuck_count == stuck_end_user_count(manufacturing_end_users())
+    assert log_summary.stuck_count == stuck_end_user_count(logistics_end_users())
+    assert mfg_summary.stuck_count != log_summary.stuck_count
 
     events = db_session.scalar(select(func.count()).select_from(StageEvent))
     assert events is not None and events >= 40
