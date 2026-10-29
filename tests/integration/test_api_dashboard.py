@@ -19,6 +19,13 @@ def test_dashboard_returns_html(client: TestClient) -> None:
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert "Rollout" in response.text
+    assert 'id="dashboard-error"' in response.text
+    dashboard_at = response.text.index('id="dashboard"')
+    error_at = response.text.index('id="dashboard-error"')
+    login_error_at = response.text.index('id="login-error"')
+    assert dashboard_at < error_at
+    assert login_error_at < dashboard_at
+    assert 'onDashboard ? $("dashboard-error") : $("login-error")' in response.text
 
 
 def test_list_tenants_returns_assigned_for_strategist(

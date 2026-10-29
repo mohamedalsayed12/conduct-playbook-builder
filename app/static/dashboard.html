@@ -145,6 +145,7 @@
 
   <!-- Dashboard -->
   <section id="dashboard" class="hidden">
+    <div id="dashboard-error" class="error" role="alert"></div>
     <div id="demo-banner" class="demo-banner hidden">Demo mode: fictional data, no API calls.</div>
 
     <div class="kpis">
@@ -232,7 +233,7 @@ async function signIn(event) {
   } catch (err) {
     state.token = null;
     state.tenantId = null;
-    if (err.message !== "unauthorised") showError(err.message);
+    reportRequestError(err);
   }
 }
 
@@ -272,6 +273,7 @@ async function loadDashboard() {
 }
 
 function render(summary, stuck) {
+  showError("");
   $("login").classList.add("hidden");
   $("dashboard").classList.remove("hidden");
   $("refresh").classList.toggle("hidden", state.demo);
@@ -370,9 +372,19 @@ function signOut(message) {
   showError(message || "");
 }
 
+function reportRequestError(err) {
+  if (err.message === "unauthorised") return;
+  showError(err.message);
+}
+
 function showError(message) {
-  $("login-error").textContent = message;
-  $("login-error").style.display = message ? "block" : "none";
+  const onDashboard = !$("dashboard").classList.contains("hidden");
+  const active = onDashboard ? $("dashboard-error") : $("login-error");
+  const inactive = onDashboard ? $("login-error") : $("dashboard-error");
+  active.textContent = message || "";
+  active.style.display = message ? "block" : "none";
+  inactive.textContent = "";
+  inactive.style.display = "none";
 }
 
 // Fictional demo data in the exact shape of TenantSummaryResponse / StuckUserListResponse.
@@ -413,10 +425,10 @@ $("demo").addEventListener("click", () => {
   render(summary, stuck);
 });
 $("logout").addEventListener("click", () => signOut());
-$("refresh").addEventListener("click", () => loadDashboard().catch((err) => showError(err.message)));
+$("refresh").addEventListener("click", () => loadDashboard().catch(reportRequestError));
 $("tenant-select").addEventListener("change", () => {
   state.tenantId = $("tenant-select").value;
-  loadDashboard().catch((err) => showError(err.message));
+  loadDashboard().catch(reportRequestError);
 });
 </script>
 </body>
