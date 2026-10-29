@@ -59,3 +59,10 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 - Shared `app/seed_data.py` constants; factories reuse default playbook steps.
 - Public `get_default_playbook` / `copy_playbook_to_tenant`; `make cov` (≥90% on `services/` + `security/`, measured 95%).
 - Seed idempotency + shape tests; decisions for natural-key seeding.
+
+## Phase 6 — README
+
+**Branch / PR:** `phase-6-readme` · [#12](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/12) · closes #5
+
+- Full README: pitch, why-it-exists (as assumption), features, Mermaid architecture, security model, quick start + curl walkthrough, testing, decisions link, next steps.
+- Verified host commands: `make up`, `make migrate`, `make seed`, health/auth/tenant/summary curls against local API.
