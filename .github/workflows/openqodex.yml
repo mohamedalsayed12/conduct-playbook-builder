@@ -12,10 +12,12 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      # Pin to commit SHA (zizmor unpinned-uses). Tag: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - uses: openqodex/openqodex@v0
+      # Pin to commit SHA. Tag: openqodex/openqodex@v0
+      - uses: openqodex/openqodex@6d879d65de94ab201bddd9ccad76e1d1bcff70ca
         with:
           # Scanners only — no Anthropic key / AI review (see docs/decisions.md).
           review: off
