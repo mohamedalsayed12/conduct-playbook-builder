@@ -120,8 +120,8 @@
 ## Deploy — Render free Blueprint
 
 ### Free-tier Blueprint for the portfolio demo
-**Decision:** Ship a root `render.yaml` that creates a free Docker web service, free Postgres 16, and free Key Value (Redis). Pre-deploy runs migrate + idempotent seed; `DATABASE_URL` from Render is normalized to `postgresql+psycopg://`.
-**Alternatives:** Paid always-on plans; host without Redis; manual dashboard-only env wiring with no Blueprint.
+**Decision:** Ship a root `render.yaml` that creates a free Docker web service, free Postgres 16, and free Key Value (Redis). Container start runs migrate + idempotent seed (free plans reject `preDeployCommand`); `DATABASE_URL` from Render is normalized to `postgresql+psycopg://`.
+**Alternatives:** Paid always-on plans with a pre-deploy command; host without Redis; manual dashboard-only env wiring with no Blueprint.
 **Why:** Reviewers can deploy from GitHub in one Blueprint step. Cold starts and temporary free Postgres are acceptable for a demo; Redis remains optional at runtime (summary falls back to Postgres if Key Value is down).
 
 ## Phase 7 — Hardening

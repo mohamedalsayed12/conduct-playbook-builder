@@ -57,7 +57,7 @@ A Blueprint in [`render.yaml`](render.yaml) provisions a free web service, Postg
 1. Push `main` (this repo already includes the Blueprint).
 2. In the [Render Dashboard](https://dashboard.render.com): **New → Blueprint**.
 3. Connect `mohamedalsayed12/conduct-playbook-builder`, branch `main`, then **Deploy Blueprint**.
-4. Wait for the first build (Docker image, `alembic upgrade head`, idempotent `make seed` equivalent).
+4. Wait for the first build. On start the container runs `alembic upgrade head` and the idempotent seed (free plans do not support a pre-deploy command).
 
 Then open:
 
