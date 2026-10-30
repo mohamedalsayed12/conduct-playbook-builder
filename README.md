@@ -50,6 +50,23 @@ Layers: **routers** = HTTP only; **services** = business rules; **models** = per
 
 Design write-ups: [`docs/decisions.md`](docs/decisions.md). Phase history: [`docs/phase-log.md`](docs/phase-log.md).
 
+## Live demo on Render (free)
+
+A Blueprint in [`render.yaml`](render.yaml) provisions a free web service, Postgres 16, and Redis-compatible Key Value.
+
+1. Push `main` (this repo already includes the Blueprint).
+2. In the [Render Dashboard](https://dashboard.render.com): **New → Blueprint**.
+3. Connect `mohamedalsayed12/conduct-playbook-builder`, branch `main`, then **Deploy Blueprint**.
+4. Wait for the first build (Docker image, `alembic upgrade head`, idempotent `make seed` equivalent).
+
+Then open:
+
+- `https://<your-service>.onrender.com/dashboard`
+- `https://<your-service>.onrender.com/docs`
+- `https://<your-service>.onrender.com/health`
+
+Use the seed logins below. Free web services **cold-start** after idle (first request can take ~30–60s). Free Postgres is temporary — fine for a portfolio demo, not a permanent production DB.
+
 ## Prerequisites
 
 - Docker Desktop (or compatible engine) with Compose
