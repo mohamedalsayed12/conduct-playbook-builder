@@ -10,7 +10,6 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    preDeployCommand: /app/scripts/render_predeploy.sh
     envVars:
       - key: APP_ENV
         value: production
