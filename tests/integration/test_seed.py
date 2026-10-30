@@ -10,8 +10,9 @@ from app.models.enums import UserRole, UserStage
 from app.seed_data import (
     TENANT_LOGISTICS,
     TENANT_MANUFACTURING,
-    logistics_end_users,
-    manufacturing_end_users,
+    demo_end_users,
+    named_demo_email,
+    named_demo_users,
     stage_counts,
     stuck_end_user_count,
 )
@@ -28,13 +29,15 @@ def test_seed_creates_expected_shape(
     assert report.playbooks_created == 1
     assert report.tenants_created == 2
     assert report.assignments_created == 2
-    expected_users = (
-        1  # strategist
-        + 2  # customer admins
-        + len(manufacturing_end_users())
-        + len(logistics_end_users())
-    )
+    mfg_users = demo_end_users(TENANT_MANUFACTURING)
+    log_users = demo_end_users(TENANT_LOGISTICS)
+    expected_users = 1 + 2 + len(mfg_users) + len(log_users)
     assert report.users_created == expected_users
+    assert (
+        len(named_demo_users(TENANT_MANUFACTURING))
+        + len(named_demo_users(TENANT_LOGISTICS))
+        == 10
+    )
 
     tenants = {
         tenant.name: tenant for tenant in db_session.scalars(select(Tenant)).all()
@@ -42,8 +45,18 @@ def test_seed_creates_expected_shape(
     assert set(tenants) == {TENANT_MANUFACTURING, TENANT_LOGISTICS}
     mfg_id = tenants[TENANT_MANUFACTURING].id
     log_id = tenants[TENANT_LOGISTICS].id
-    assert count_seed_end_users(db_session, mfg_id) == 20
-    assert count_seed_end_users(db_session, log_id) == 20
+    assert count_seed_end_users(db_session, mfg_id) == len(mfg_users)
+    assert count_seed_end_users(db_session, log_id) == len(log_users)
+
+    named_emails = {
+        named_demo_email(spec)
+        for spec in named_demo_users(TENANT_MANUFACTURING)
+        + named_demo_users(TENANT_LOGISTICS)
+    }
+    stored_emails = set(
+        db_session.scalars(select(User.email).where(User.email.in_(named_emails))).all()
+    )
+    assert stored_emails == named_emails
 
     mfg_summary = compute_tenant_summary(
         db_session, tenant_id=mfg_id, clock=frozen_clock
@@ -51,11 +64,11 @@ def test_seed_creates_expected_shape(
     log_summary = compute_tenant_summary(
         db_session, tenant_id=log_id, clock=frozen_clock
     )
-    assert mfg_summary.users_per_stage == stage_counts(manufacturing_end_users())
-    assert log_summary.users_per_stage == stage_counts(logistics_end_users())
+    assert mfg_summary.users_per_stage == stage_counts(mfg_users)
+    assert log_summary.users_per_stage == stage_counts(log_users)
     assert mfg_summary.users_per_stage != log_summary.users_per_stage
-    assert mfg_summary.stuck_count == stuck_end_user_count(manufacturing_end_users())
-    assert log_summary.stuck_count == stuck_end_user_count(logistics_end_users())
+    assert mfg_summary.stuck_count == stuck_end_user_count(mfg_users)
+    assert log_summary.stuck_count == stuck_end_user_count(log_users)
     assert mfg_summary.stuck_count != log_summary.stuck_count
 
     events = db_session.scalar(select(func.count()).select_from(StageEvent))

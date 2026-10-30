@@ -56,7 +56,7 @@ DEFAULT_PLAYBOOK_STEPS: tuple[PlaybookStepSpec, ...] = (
     ),
 )
 
-# About 40 end users across both tenants (20 each), deterministic emails.
+# About 40 generated end users (20 each), plus 10 named demo colleagues.
 _SAP_CYCLE: tuple[SapRole, ...] = (
     SapRole.DEVELOPER,
     SapRole.ANALYST,
@@ -113,6 +113,73 @@ def manufacturing_end_users() -> tuple[EndUserSpec, ...]:
 def logistics_end_users() -> tuple[EndUserSpec, ...]:
     """Return 20 fictional end users for Demo Logistics AG."""
     return _build_end_users("log", _LOGISTICS_STAGE_PLAN, count=20)
+
+
+# Fictional colleagues for demos. Emails are unique so sign-in stays unambiguous.
+_NAMED_DEMO_USERS: tuple[tuple[str, EndUserSpec], ...] = (
+    (
+        TENANT_MANUFACTURING,
+        EndUserSpec("dana.vogel", SapRole.DEVELOPER, UserStage.FIRST_USE, 12),
+    ),
+    (
+        TENANT_MANUFACTURING,
+        EndUserSpec("jonas.keller", SapRole.ANALYST, UserStage.INVITED, 10),
+    ),
+    (
+        TENANT_MANUFACTURING,
+        EndUserSpec("mira.hoffmann", SapRole.PROCESS_OWNER, UserStage.ACTIVATED, 9),
+    ),
+    (
+        TENANT_MANUFACTURING,
+        EndUserSpec("lukas.berger", SapRole.ARCHITECT, UserStage.ACTIVE, 4),
+    ),
+    (
+        TENANT_MANUFACTURING,
+        EndUserSpec("anja.schmitt", SapRole.DEVELOPER, UserStage.ACTIVATED, 2),
+    ),
+    (
+        TENANT_LOGISTICS,
+        EndUserSpec("peter.lang", SapRole.ANALYST, UserStage.ACTIVE, 4),
+    ),
+    (
+        TENANT_LOGISTICS,
+        EndUserSpec("sofia.meier", SapRole.PROCESS_OWNER, UserStage.FIRST_USE, 3),
+    ),
+    (
+        TENANT_LOGISTICS,
+        EndUserSpec("henrik.wolf", SapRole.DEVELOPER, UserStage.INVITED, 15),
+    ),
+    (
+        TENANT_LOGISTICS,
+        EndUserSpec("clara.neumann", SapRole.ARCHITECT, UserStage.ACTIVE, 4),
+    ),
+    (
+        TENANT_LOGISTICS,
+        EndUserSpec("tobias.klein", SapRole.ANALYST, UserStage.ACTIVATED, 1),
+    ),
+)
+
+
+def named_demo_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
+    """Return the named fictional end users for one demo tenant."""
+    return tuple(spec for name, spec in _NAMED_DEMO_USERS if name == tenant_name)
+
+
+def demo_end_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
+    """Return generated plus named end users for one demo tenant."""
+    if tenant_name == TENANT_MANUFACTURING:
+        generated = manufacturing_end_users()
+    elif tenant_name == TENANT_LOGISTICS:
+        generated = logistics_end_users()
+    else:
+        message = f"Unknown demo tenant: {tenant_name}"
+        raise ValueError(message)
+    return generated + named_demo_users(tenant_name)
+
+
+def named_demo_email(spec: EndUserSpec) -> str:
+    """Return the stored email for a named demo user."""
+    return f"{spec.email_local}@example.com"
 
 
 def stage_counts(users: tuple[EndUserSpec, ...]) -> dict[UserStage, int]:

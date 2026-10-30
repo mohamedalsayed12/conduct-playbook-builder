@@ -80,7 +80,14 @@ make seed
 | Admin (Example Manufacturing GmbH) | `admin@example-manufacturing.example` | `seed-admin-pass-1` |
 | Admin (Demo Logistics AG) | `admin@demo-logistics.example` | `seed-admin-pass-1` |
 
-Running `make seed` twice does not create duplicates.
+Ten named fictional end users are included for demos. Anyone not still in `invited` can sign in with `seed-user-pass-1`.
+
+| Account | People |
+| --- | --- |
+| Example Manufacturing GmbH | Dana Vogel, Jonas Keller, Mira Hoffmann, Lukas Berger, Anja Schmitt |
+| Demo Logistics AG | Peter Lang, Sofia Meier, Henrik Wolf, Clara Neumann, Tobias Klein |
+
+Emails are the lowercase name plus `@example.com` (for example `dana.vogel@example.com`). Running `make seed` twice does not create duplicates.
 
 ### Example walkthrough (curl)
 
@@ -147,7 +154,7 @@ Critical coverage (what the suite is guarding):
 - **Log scrubbing** — invite + login flows never log emails, passwords, tokens, or JWTs
 - **Summary cache** — cache hit skips DB recompute; invite / accept / advance invalidate after commit; Redis down still serves from Postgres
 - **Stuck + averages** — stuck threshold and average days in stage use the injectable clock
-- **Seed** — expected shape (~40 end users) and second run creates nothing
+- **Seed** — expected shape (50 end users, including 10 named colleagues) and second run creates nothing
 
 ## Design decisions
 
