@@ -1,9 +1,9 @@
 """Application settings loaded from environment variables."""
 
 from functools import lru_cache
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
-from pydantic import model_validator
+from pydantic import BeforeValidator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _MIN_JWT_SECRET_LENGTH = 32
@@ -18,6 +18,18 @@ _JWT_SECRET_PRODUCTION_FORBIDDEN_FRAGMENTS = (
     "do-not-use",
     "local-dev",
 )
+_PSYCOPG_SCHEME = "postgresql+psycopg://"
+
+
+def normalize_database_url(value: object) -> object:
+    """Rewrite Render-style postgres URLs to the SQLAlchemy psycopg driver."""
+    if not isinstance(value, str):
+        return value
+    if value.startswith("postgres://"):
+        return _PSYCOPG_SCHEME + value.removeprefix("postgres://")
+    if value.startswith("postgresql://"):
+        return _PSYCOPG_SCHEME + value.removeprefix("postgresql://")
+    return value
 
 
 class Settings(BaseSettings):
@@ -31,7 +43,9 @@ class Settings(BaseSettings):
 
     app_env: Literal["development", "production", "test"] = "development"
     log_level: str = "INFO"
-    database_url: str = "postgresql+psycopg://conduct:conduct@localhost:5432/conduct"
+    database_url: Annotated[str, BeforeValidator(normalize_database_url)] = (
+        "postgresql+psycopg://conduct:conduct@localhost:5432/conduct"
+    )
     redis_url: str = "redis://localhost:6379/0"
     invite_expiry_hours: int = 72
     max_page_size: int = 100

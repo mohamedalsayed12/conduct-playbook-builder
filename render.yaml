@@ -1,0 +1,54 @@
+# Free-tier Blueprint for a public portfolio demo.
+# Dashboard: New → Blueprint → connect this repo → Deploy.
+# Free web services cold-start after idle; free Postgres is temporary.
+
+services:
+  - type: web
+    name: conduct-playbook-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    preDeployCommand: /app/scripts/render_predeploy.sh
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY_MINUTES
+        value: "30"
+      - key: INVITE_EXPIRY_HOURS
+        value: "72"
+      - key: MAX_PAGE_SIZE
+        value: "100"
+      - key: DEFAULT_PAGE_SIZE
+        value: "20"
+      - key: STUCK_AFTER_DAYS
+        value: "7"
+      - key: SUMMARY_CACHE_TTL_SECONDS
+        value: "60"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: conduct-playbook-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: conduct-playbook-cache
+          property: connectionString
+
+  - type: keyvalue
+    name: conduct-playbook-cache
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+databases:
+  - name: conduct-playbook-db
+    plan: free
+    postgresMajorVersion: "16"
+    databaseName: conduct
+    user: conduct
