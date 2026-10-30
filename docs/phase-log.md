@@ -80,3 +80,16 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 ## Follow-up — OpenQodex workflow
 
 - Added `.github/workflows/openqodex.yml`: scanners-only on every PR, SARIF to code scanning, `block-on-severity: major`, `fail-on-tool-error: true`, AI review off.
+
+## Phase 8 — Rollout dashboard
+
+**Branch / PR / release:** `phase-8-dashboard` · [#15](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/15) · [release](https://github.com/mohamedalsayed12/conduct-playbook-builder/releases/tag/phase-8-dashboard)
+
+- Static `app/static/dashboard.html` served at `GET /dashboard` (`FileResponse`, omitted from OpenAPI).
+- `GET /tenants` lists tenants from `accessible_tenant_ids` (strategist assignments / admin’s own); isolation tests included.
+- Dashboard login uses account dropdown filled from `GET /tenants` after sign-in.
+- README screenshot + `/dashboard` link.
+- Seed: Demo Logistics AG is mostly `active` (2 stuck) and Example Manufacturing GmbH is spread across early stages (8 stuck). Re-running seed still skips existing users.
+- Seed: 10 named fictional colleagues (5 per tenant) with unique `@example.com` emails for demos; passwords still `seed-user-pass-1` when past `invited`.
+- Login without `tenant_id` succeeds only for a unique email; a duplicate email across tenants returns the same generic 401 as a bad password (`decisions.md`).
+- After sign-in, failed summary/stuck/refresh requests show on `#dashboard-error`, not the hidden login panel.

@@ -24,3 +24,9 @@ class TenantResponse(BaseModel):
     id: uuid.UUID
     name: str
     created_at: datetime
+
+
+class TenantListResponse(BaseModel):
+    """Tenants the caller can access."""
+
+    items: list[TenantResponse]

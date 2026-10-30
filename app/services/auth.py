@@ -69,15 +69,23 @@ def _find_user_for_login(
     email: str,
     tenant_id: uuid.UUID | None,
 ) -> User | None:
-    if tenant_id is None:
-        statement = select(User).where(
+    if tenant_id is not None:
+        return session.scalars(
+            select(User).where(User.email == email, User.tenant_id == tenant_id)
+        ).first()
+
+    strategist = session.scalars(
+        select(User).where(
             User.email == email,
             User.role == UserRole.STRATEGIST,
             User.tenant_id.is_(None),
         )
-    else:
-        statement = select(User).where(
-            User.email == email,
-            User.tenant_id == tenant_id,
-        )
-    return session.scalars(statement).first()
+    ).first()
+    if strategist is not None:
+        return strategist
+
+    # Unique email across tenants (e.g. seeded customer admins) can omit tenant_id.
+    matches = list(session.scalars(select(User).where(User.email == email)).all())
+    if len(matches) == 1:
+        return matches[0]
+    return None

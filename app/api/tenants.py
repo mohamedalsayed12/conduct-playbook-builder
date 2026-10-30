@@ -8,11 +8,27 @@ from fastapi import APIRouter, status
 
 from app.api.deps import AppClock, CurrentUser, DbSession
 from app.schemas.assignments import StrategistAssignmentResponse
-from app.schemas.tenants import TenantCreateRequest, TenantResponse
+from app.schemas.tenants import (
+    TenantCreateRequest,
+    TenantListResponse,
+    TenantResponse,
+)
 from app.services import assignments as assignment_service
 from app.services import tenants as tenant_service
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
+
+
+@router.get("", response_model=TenantListResponse)
+def list_tenants(
+    session: DbSession,
+    current_user: CurrentUser,
+) -> TenantListResponse:
+    """List tenants the caller can access (assignments or own tenant)."""
+    tenants = tenant_service.list_accessible_tenants(session, actor=current_user)
+    return TenantListResponse(
+        items=[TenantResponse.model_validate(tenant) for tenant in tenants]
+    )
 
 
 @router.post(

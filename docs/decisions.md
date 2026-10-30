@@ -88,6 +88,11 @@
 **Alternatives:** Require a separate assign call; leave the creator without access until assigned.
 **Why:** Without an assignment the creator could not call any tenant-scoped endpoint after create. Auto-assign is the natural bootstrap for coverage.
 
+### Login without `tenant_id` only when the email matches one user
+**Decision:** If `tenant_id` is omitted, authenticate a strategist (`tenant_id` null) when that email matches one. Otherwise authenticate only when exactly one user row has that email. Two or more rows return the same `Invalid credentials` error as a wrong password.
+**Alternatives:** Require `tenant_id` for every customer user; pick an arbitrary tenant; return a distinct “email is ambiguous” error.
+**Why:** The dashboard sign-in form does not ask which account. Seeded admins have unique emails, so omitting `tenant_id` is unambiguous. Emails are unique per tenant, not globally, so the same address can exist on two accounts. A distinct error would tell an attacker that the email is registered and that they should try tenant ids. Callers who know the account pass `tenant_id` and still match that row.
+
 ### HS256 JWT with algorithm allow-list
 **Decision:** Issue and verify tokens with HS256 only via PyJWT `algorithms=["HS256"]`.
 **Alternatives:** Asymmetric RS256; accept multiple HMAC algorithms.

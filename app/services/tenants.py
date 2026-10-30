@@ -12,9 +12,28 @@ from sqlalchemy.orm import Session, selectinload
 from app.clock import utc_now
 from app.errors import DefaultPlaybookMissingError
 from app.models import Playbook, PlaybookStep, StrategistAssignment, Tenant, User
-from app.services.scoping import require_strategist
+from app.services.scoping import (
+    accessible_tenant_ids,
+    require_management_role,
+    require_strategist,
+)
 
 Clock = Callable[[], datetime]
+
+
+def list_accessible_tenants(session: Session, *, actor: User) -> list[Tenant]:
+    """Return tenants the caller may manage, ordered by name then id."""
+    require_management_role(actor)
+    tenant_ids = accessible_tenant_ids(session, actor)
+    if not tenant_ids:
+        return []
+    return list(
+        session.scalars(
+            select(Tenant)
+            .where(Tenant.id.in_(tenant_ids))
+            .order_by(Tenant.name.asc(), Tenant.id.asc())
+        ).all()
+    )
 
 
 def create_tenant(

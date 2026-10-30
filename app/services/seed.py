@@ -32,8 +32,7 @@ from app.seed_data import (
     TENANT_LOGISTICS,
     TENANT_MANUFACTURING,
     EndUserSpec,
-    logistics_end_users,
-    manufacturing_end_users,
+    demo_end_users,
 )
 from app.services.tenants import copy_playbook_to_tenant, get_default_playbook
 
@@ -104,8 +103,8 @@ def run_seed(session: Session, *, clock: Clock = utc_now) -> SeedReport:
     users_created += admin_mfg_created + admin_log_created
 
     for tenant, specs in (
-        (mfg, manufacturing_end_users()),
-        (logi, logistics_end_users()),
+        (mfg, demo_end_users(TENANT_MANUFACTURING)),
+        (logi, demo_end_users(TENANT_LOGISTICS)),
     ):
         for spec in specs:
             users_created += _ensure_end_user(

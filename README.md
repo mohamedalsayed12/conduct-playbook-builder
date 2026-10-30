@@ -19,6 +19,9 @@ This tool captures that deployment knowledge as reusable **playbooks** and gives
 - **Redis cache** for summaries (`summary:v1:{tenant_id}`), invalidated **after** DB commit; Postgres fallback if Redis is down
 - **Security** — HS256 JWTs, tenant scoping, invite token hashing, no personal data in logs
 - **Seed data** — fictional demo tenants via `make seed` (idempotent)
+- **Rollout dashboard** — browser UI at [`/dashboard`](http://localhost:8000/dashboard) (summary, funnel, stuck users)
+
+![Rollout dashboard](docs/screenshots/dashboard.png)
 
 ## Architecture
 
@@ -63,6 +66,7 @@ make seed
 ```
 
 - API: [http://localhost:8000](http://localhost:8000)
+- Dashboard: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
 - OpenAPI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Health: [http://localhost:8000/health](http://localhost:8000/health)
 
@@ -76,7 +80,14 @@ make seed
 | Admin (Example Manufacturing GmbH) | `admin@example-manufacturing.example` | `seed-admin-pass-1` |
 | Admin (Demo Logistics AG) | `admin@demo-logistics.example` | `seed-admin-pass-1` |
 
-Running `make seed` twice does not create duplicates.
+Ten named fictional end users are included for demos. Anyone not still in `invited` can sign in with `seed-user-pass-1`.
+
+| Account | People |
+| --- | --- |
+| Example Manufacturing GmbH | Dana Vogel, Jonas Keller, Mira Hoffmann, Lukas Berger, Anja Schmitt |
+| Demo Logistics AG | Peter Lang, Sofia Meier, Henrik Wolf, Clara Neumann, Tobias Klein |
+
+Emails are the lowercase name plus `@example.com` (for example `dana.vogel@example.com`). Running `make seed` twice does not create duplicates.
 
 ### Example walkthrough (curl)
 
@@ -143,7 +154,7 @@ Critical coverage (what the suite is guarding):
 - **Log scrubbing** — invite + login flows never log emails, passwords, tokens, or JWTs
 - **Summary cache** — cache hit skips DB recompute; invite / accept / advance invalidate after commit; Redis down still serves from Postgres
 - **Stuck + averages** — stuck threshold and average days in stage use the injectable clock
-- **Seed** — expected shape (~40 end users) and second run creates nothing
+- **Seed** — expected shape (50 end users, including 10 named colleagues) and second run creates nothing
 
 ## Design decisions
 
