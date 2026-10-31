@@ -2,6 +2,8 @@
 
 *Conduct makes SAP knowledge available at scale. This tool tries to do the same for deployment knowledge.*
 
+**[Live demo →](https://conduct-playbook-api.onrender.com/dashboard)** Click **View demo data** for an instant look. The free host sleeps when idle, so the first load can take up to a minute.
+
 [Conduct](https://conduct.ai) is an AI operating system for enterprise software, starting with SAP. This repository is **not** that product. It is a multi-tenant **deployment onboarding tracker** so Conduct’s deployment strategists can land and stick the product at enterprise accounts after a sale.
 
 ## Why this exists
@@ -59,11 +61,11 @@ A Blueprint in [`render.yaml`](render.yaml) provisions a free web service, Postg
 3. Connect `mohamedalsayed12/conduct-playbook-builder`, branch `main`, then **Deploy Blueprint**.
 4. Wait for the first build. On start the container runs `alembic upgrade head` and the idempotent seed (free plans do not support a pre-deploy command).
 
-Then open:
+**Live demo:** [conduct-playbook-api.onrender.com](https://conduct-playbook-api.onrender.com) (opens the dashboard; click **View demo data** for an instant look, no login needed)
 
-- `https://<your-service>.onrender.com/dashboard`
-- `https://<your-service>.onrender.com/docs`
-- `https://<your-service>.onrender.com/health`
+- Dashboard: <https://conduct-playbook-api.onrender.com/dashboard>
+- API docs: <https://conduct-playbook-api.onrender.com/docs>
+- Health: <https://conduct-playbook-api.onrender.com/health>
 
 Use the seed logins below. Free web services **cold-start** after idle (first request can take ~30–60s). Free Postgres is temporary — fine for a portfolio demo, not a permanent production DB.
 

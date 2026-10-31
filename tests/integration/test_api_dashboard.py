@@ -14,6 +14,12 @@ from tests.conftest import FrozenClock
 from tests.factories import create_customer_admin, create_strategist
 
 
+def test_root_redirects_to_dashboard(client: TestClient) -> None:
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/dashboard"
+
+
 def test_dashboard_returns_html(client: TestClient) -> None:
     response = client.get("/dashboard")
     assert response.status_code == 200
