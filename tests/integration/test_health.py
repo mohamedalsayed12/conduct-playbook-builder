@@ -82,3 +82,45 @@ def test_health_returns_503_when_redis_is_unreachable(
     assert body["status"] == "unavailable"
     assert body["checks"]["database"] is True
     assert body["checks"]["redis"] is False
+
+
+def test_health_live_returns_ok_when_redis_is_unreachable(
+    health_app: FastAPI,
+    app_client: TestClient,
+) -> None:
+    broken_redis = RedisClient(
+        host="127.0.0.1",
+        port=1,
+        socket_connect_timeout=0.2,
+        socket_timeout=0.2,
+        decode_responses=True,
+    )
+    health_app.dependency_overrides[_redis_client] = lambda: broken_redis
+    try:
+        response = app_client.get("/health/live")
+    finally:
+        broken_redis.close()
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_health_live_returns_503_when_database_is_unreachable(
+    health_app: FastAPI,
+    app_client: TestClient,
+) -> None:
+    broken_engine = create_engine(
+        "postgresql+psycopg://conduct:conduct@127.0.0.1:1/conduct_test",
+        pool_pre_ping=True,
+        connect_args={"connect_timeout": _PROBE_CONNECT_TIMEOUT_SECONDS},
+    )
+    health_app.dependency_overrides[_database_engine] = lambda: broken_engine
+    try:
+        response = app_client.get("/health/live")
+    finally:
+        broken_engine.dispose()
+
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "unavailable"
+    assert body["checks"] == {"database": False}

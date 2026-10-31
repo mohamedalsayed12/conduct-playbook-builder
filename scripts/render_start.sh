@@ -1,6 +1,6 @@
 #!/bin/sh
-# Start the API. Free Render plans cannot run preDeployCommand, so migrate
-# and seed here before binding $PORT (defaults to 8000 for local Docker).
+# Render-only boot. Free plans cannot run preDeployCommand, so migrate and
+# seed here. Local Compose does not use this script.
 set -eu
 /app/scripts/render_predeploy.sh
 PORT="${PORT:-8000}"

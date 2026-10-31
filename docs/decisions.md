@@ -120,9 +120,17 @@
 ## Deploy — Render free Blueprint
 
 ### Free-tier Blueprint for the portfolio demo
-**Decision:** Ship a root `render.yaml` that creates a free Docker web service, free Postgres 16, and free Key Value (Redis). Container start runs migrate + idempotent seed (free plans reject `preDeployCommand`); `DATABASE_URL` from Render is normalized to `postgresql+psycopg://`.
+**Decision:** Ship a root `render.yaml` that creates a free Docker web service, free Postgres 16, and free Key Value (Redis). The image command only starts uvicorn. Render sets `dockerCommand` to a boot script that migrates and seeds (free plans reject `preDeployCommand`). `DATABASE_URL` from Render is normalized to `postgresql+psycopg://`.
 **Alternatives:** Paid always-on plans with a pre-deploy command; host without Redis; manual dashboard-only env wiring with no Blueprint.
 **Why:** Reviewers can deploy from GitHub in one Blueprint step. Cold starts and temporary free Postgres are acceptable for a demo; Redis remains optional at runtime (summary falls back to Postgres if Key Value is down).
+
+### Render probes Postgres only
+**Decision:** The Blueprint `healthCheckPath` is `GET /health/live`, which returns 200 when Postgres answers and does not call Redis. `GET /health` still returns 503 when either dependency is down.
+**Why:** A Key Value blip must not fail the platform probe. Render restarts an unhealthy web service, and each restart re-runs migrate and seed before the port opens. Summary reads already fall back to Postgres.
+
+### Render boot scripts stay LF
+**Decision:** `*.sh` is `eol=lf` in `.gitattributes`. The image strips CR from the boot scripts before it marks them executable.
+**Why:** With `core.autocrlf=true`, a Windows checkout is CRLF. The Linux kernel then looks up `/bin/sh\r` and the script fails to start. Render’s own clone is LF; local Docker Desktop builds copy the working tree.
 
 ## Phase 7 — Hardening
 

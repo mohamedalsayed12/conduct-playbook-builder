@@ -63,7 +63,8 @@ Then open:
 
 - `https://<your-service>.onrender.com/dashboard`
 - `https://<your-service>.onrender.com/docs`
-- `https://<your-service>.onrender.com/health`
+- `https://<your-service>.onrender.com/health` (Postgres and Redis; 503 if either is down)
+- `https://<your-service>.onrender.com/health/live` (Render’s probe; Postgres only)
 
 Use the seed logins below. Free web services **cold-start** after idle (first request can take ~30–60s). Free Postgres is temporary — fine for a portfolio demo, not a permanent production DB.
 

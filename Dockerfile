@@ -34,10 +34,15 @@ COPY --chown=appuser:appuser alembic.ini ./alembic.ini
 COPY --chown=appuser:appuser migrations ./migrations
 COPY --chown=appuser:appuser scripts ./scripts
 
-RUN chmod +x /app/scripts/render_start.sh /app/scripts/render_predeploy.sh
+# Working trees on Windows may be CRLF. Strip CR so the kernel can
+# resolve the shebang when Render runs the boot script.
+RUN sed -i 's/\r$//' /app/scripts/render_start.sh /app/scripts/render_predeploy.sh \
+    && chmod +x /app/scripts/render_start.sh /app/scripts/render_predeploy.sh
 
 USER appuser
 
 EXPOSE 8000
 
-CMD ["/app/scripts/render_start.sh"]
+# Local Compose uses this. Render overrides it with dockerCommand so only
+# the Blueprint migrates and seeds on boot.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

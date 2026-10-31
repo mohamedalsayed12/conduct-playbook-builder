@@ -32,6 +32,23 @@ class HealthResponse(BaseModel):
     )
 
 
+class LiveChecks(BaseModel):
+    """Postgres connectivity for the platform liveness probe."""
+
+    database: bool
+
+
+class LiveResponse(BaseModel):
+    """Liveness payload. Redis is intentionally omitted."""
+
+    status: str = Field(examples=["ok"])
+    checks: LiveChecks | None = Field(
+        default=None,
+        examples=[None],
+        description="Present when Postgres is unreachable.",
+    )
+
+
 def _database_engine() -> Engine:
     return get_engine()
 
@@ -64,3 +81,23 @@ def health(
         status="unavailable",
         checks=HealthChecks(database=database_ok, redis=redis_ok),
     )
+
+
+@router.get(
+    "/health/live",
+    response_model=LiveResponse,
+    response_model_exclude_none=True,
+    responses={
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": LiveResponse},
+    },
+)
+def health_live(
+    response: Response,
+    engine: Annotated[Engine, Depends(_database_engine)],
+) -> LiveResponse:
+    """Report whether Postgres is reachable. Redis is not required."""
+    if check_database(engine):
+        return LiveResponse(status="ok")
+
+    response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return LiveResponse(status="unavailable", checks=LiveChecks(database=False))

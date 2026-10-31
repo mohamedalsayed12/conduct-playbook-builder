@@ -9,7 +9,8 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /health
+    dockerCommand: /app/scripts/render_start.sh
+    healthCheckPath: /health/live
     envVars:
       - key: APP_ENV
         value: production

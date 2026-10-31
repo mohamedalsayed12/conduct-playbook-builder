@@ -1,0 +1,3 @@
+# Linux executes these scripts. Force LF so a Windows checkout
+# (core.autocrlf=true) does not turn the shebang into /bin/sh\r.
+*.sh text eol=lf
