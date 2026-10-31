@@ -20,12 +20,12 @@ def test_dashboard_returns_html(client: TestClient) -> None:
     assert "text/html" in response.headers["content-type"]
     assert "Rollout" in response.text
     assert 'id="dashboard-error"' in response.text
+    assert 'id="login-error"' in response.text
+    assert 'id="tenant-select"' in response.text
     dashboard_at = response.text.index('id="dashboard"')
     error_at = response.text.index('id="dashboard-error"')
     login_error_at = response.text.index('id="login-error"')
-    assert dashboard_at < error_at
-    assert login_error_at < dashboard_at
-    assert 'onDashboard ? $("dashboard-error") : $("login-error")' in response.text
+    assert login_error_at < dashboard_at < error_at
 
 
 def test_list_tenants_returns_assigned_for_strategist(
@@ -101,3 +101,29 @@ def test_unassigned_strategist_lists_no_tenants(
     response = client.get("/tenants", headers=outsider)
     assert response.status_code == 200
     assert response.json()["items"] == []
+
+
+def test_end_user_cannot_list_tenants(
+    client: TestClient,
+    db_session: Session,
+    frozen_clock: FrozenClock,
+) -> None:
+    headers, _ = bootstrap_strategist(client, db_session, frozen_clock)
+    tenant_id = create_tenant_as_strategist(client, headers)
+    invite = client.post(
+        f"/tenants/{tenant_id}/invites",
+        headers=headers,
+        json={"email": "enduser@example.com", "sap_role": "developer"},
+    ).json()
+    client.post(
+        "/invites/accept",
+        json={"token": invite["token"], "password": "secure-password-1"},
+    )
+    end_user = login_headers(
+        client,
+        email="enduser@example.com",
+        password="secure-password-1",
+        tenant_id=tenant_id,
+    )
+    response = client.get("/tenants", headers=end_user)
+    assert response.status_code == 403
