@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
-from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.config import Settings, get_settings
 from app.errors import NotFoundError, ValidationAppError
 from app.models import Playbook, PlaybookStep, StageEvent, User
@@ -17,8 +15,6 @@ from app.models.enums import SapRole, UserStage
 from app.services.scoping import require_management_role, require_tenant_access
 from app.services.stages import next_stage
 from app.services.summary import invalidate_tenant_summary_after_commit
-
-Clock = Callable[[], datetime]
 
 
 def advance_user_stage(

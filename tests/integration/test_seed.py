@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -16,9 +18,18 @@ from app.seed_data import (
     stage_counts,
     stuck_end_user_count,
 )
-from app.services.seed import count_seed_end_users, run_seed
+from app.services.seed import run_seed
 from app.services.summary import compute_tenant_summary
 from tests.conftest import FrozenClock
+
+
+def _count_end_users(session: Session, tenant_id: uuid.UUID) -> int:
+    total = session.scalar(
+        select(func.count())
+        .select_from(User)
+        .where(User.tenant_id == tenant_id, User.role == UserRole.END_USER)
+    )
+    return int(total or 0)
 
 
 def test_seed_creates_expected_shape(
@@ -45,8 +56,8 @@ def test_seed_creates_expected_shape(
     assert set(tenants) == {TENANT_MANUFACTURING, TENANT_LOGISTICS}
     mfg_id = tenants[TENANT_MANUFACTURING].id
     log_id = tenants[TENANT_LOGISTICS].id
-    assert count_seed_end_users(db_session, mfg_id) == len(mfg_users)
-    assert count_seed_end_users(db_session, log_id) == len(log_users)
+    assert _count_end_users(db_session, mfg_id) == len(mfg_users)
+    assert _count_end_users(db_session, log_id) == len(log_users)
 
     named_emails = {
         named_demo_email(spec)

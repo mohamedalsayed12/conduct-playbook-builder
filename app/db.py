@@ -42,11 +42,10 @@ def get_session() -> Iterator[Session]:
         session.close()
 
 
-def check_database(engine: Engine | None = None) -> bool:
+def check_database(engine: Engine) -> bool:
     """Return True when a simple connectivity probe against Postgres succeeds."""
-    target = engine if engine is not None else get_engine()
     try:
-        with target.connect() as connection:
+        with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
     except OSError:
         return False

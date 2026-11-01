@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.models import (
     Playbook,
     PlaybookStep,
@@ -33,10 +32,9 @@ from app.seed_data import (
     TENANT_MANUFACTURING,
     EndUserSpec,
     demo_end_users,
+    named_demo_email,
 )
 from app.services.tenants import copy_playbook_to_tenant, get_default_playbook
-
-Clock = Callable[[], datetime]
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +264,7 @@ def _ensure_end_user(
     spec: EndUserSpec,
     now: datetime,
 ) -> int:
-    email = f"{spec.email_local}@example.com"
+    email = named_demo_email(spec)
     existing = session.scalars(
         select(User).where(User.tenant_id == tenant_id, User.email == email)
     ).first()
@@ -317,13 +315,3 @@ def _ensure_end_user(
         previous = stage
     session.flush()
     return 1
-
-
-def count_seed_end_users(session: Session, tenant_id: uuid.UUID) -> int:
-    """Return end-user count for a tenant (used by idempotency tests)."""
-    total = session.scalar(
-        select(func.count())
-        .select_from(User)
-        .where(User.tenant_id == tenant_id, User.role == UserRole.END_USER)
-    )
-    return int(total or 0)

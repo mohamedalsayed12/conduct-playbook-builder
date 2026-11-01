@@ -4,13 +4,11 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Callable
-from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.config import Settings, get_settings
 from app.errors import AuthenticationError
 from app.models import User
@@ -19,7 +17,6 @@ from app.security.emails import normalize_email
 from app.security.jwt import create_access_token
 from app.security.passwords import verify_password
 
-Clock = Callable[[], datetime]
 logger = logging.getLogger(__name__)
 
 _GENERIC_CREDENTIALS_ERROR = "Invalid credentials"

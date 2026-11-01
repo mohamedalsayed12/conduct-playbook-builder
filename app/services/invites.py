@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.config import Settings, get_settings
 from app.errors import ConflictError, InviteTokenInvalidError
 from app.models import Invite, StageEvent, User
@@ -21,8 +20,6 @@ from app.security.passwords import hash_password
 from app.services.scoping import require_management_role, require_tenant_access
 from app.services.stages import assert_transition_allowed
 from app.services.summary import invalidate_tenant_summary_after_commit
-
-Clock = Callable[[], datetime]
 
 _GENERIC_INVITE_ERROR = "Invite is invalid or has expired"
 

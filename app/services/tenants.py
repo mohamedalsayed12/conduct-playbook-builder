@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
 from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.errors import DefaultPlaybookMissingError
 from app.models import Playbook, PlaybookStep, StrategistAssignment, Tenant, User
 from app.services.scoping import (
@@ -17,8 +16,6 @@ from app.services.scoping import (
     require_management_role,
     require_strategist,
 )
-
-Clock = Callable[[], datetime]
 
 
 def list_accessible_tenants(session: Session, *, actor: User) -> list[Tenant]:

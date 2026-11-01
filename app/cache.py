@@ -27,11 +27,10 @@ def get_redis() -> RedisClient:
     )
 
 
-def check_redis(client: RedisClient | None = None) -> bool:
+def check_redis(client: RedisClient) -> bool:
     """Return True when Redis responds to PING."""
-    target = client if client is not None else get_redis()
     try:
-        return bool(target.ping())
+        return bool(client.ping())
     except (RedisError, OSError):
         return False
 

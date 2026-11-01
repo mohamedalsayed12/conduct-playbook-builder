@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.config import Settings, get_settings
 from app.errors import ValidationAppError
 from app.models import Playbook, StageEvent, User
@@ -26,8 +25,6 @@ from app.services.summary_cache import (
     read_summary_cache,
     write_summary_cache,
 )
-
-Clock = Callable[[], datetime]
 
 _SECONDS_PER_DAY = 86400.0
 

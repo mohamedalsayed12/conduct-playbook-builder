@@ -72,11 +72,8 @@ def create_customer_admin(
     now: datetime,
 ) -> User:
     """Insert a customer admin for a tenant."""
-    resolved_tenant_id = (
-        tenant_id if isinstance(tenant_id, uuid.UUID) else uuid.UUID(str(tenant_id))
-    )
     user = User(
-        tenant_id=resolved_tenant_id,
+        tenant_id=uuid.UUID(str(tenant_id)),
         email=email,
         password_hash=hash_password(password),
         role=UserRole.CUSTOMER_ADMIN,

@@ -4,18 +4,15 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Callable
-from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.clock import utc_now
+from app.clock import Clock, utc_now
 from app.errors import ConflictError, ForbiddenError, NotFoundError, ValidationAppError
 from app.models import StrategistAssignment, User
 from app.models.enums import UserRole
 from app.services.scoping import require_tenant_access
 
-Clock = Callable[[], datetime]
 logger = logging.getLogger(__name__)
 
 
