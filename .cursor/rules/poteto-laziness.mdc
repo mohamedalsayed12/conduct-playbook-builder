@@ -1,0 +1,28 @@
+---
+description: Poteto-mode workflow plus Laziness Protocol for every agent session
+alwaysApply: true
+---
+
+# Poteto mode and Laziness Protocol
+
+This repo already has Conduct phase rules (`code-quality`, `verify-and-secure`, `product-alignment`). Those stay authoritative for phases, stack, security, and product scope. This rule adds how agents plan and shrink work.
+
+## When `/poteto-mode` is in play (or the task is nontrivial)
+
+1. Read the poteto-mode skill first (`pstack` plugin `poteto-mode/SKILL.md`). Match a playbook. Copy its steps into the todo list before freelancing.
+2. Use `poteto-agent` only as a playbook delegate, never to run the playbook itself.
+3. Name each principle that changed a decision, and only after reading that principle's leaf SKILL.md this session.
+4. Prefer deletion and the smallest diff (Laziness Protocol below). Do not invent features outside `CURSOR_PROMPT.md` / the current phase.
+
+## Laziness Protocol (always)
+
+Apply whenever you refactor, size a diff, or feel tempted to add a layer, helper, flag, or "cleanup abstraction".
+
+- **Consolidate decisions.** One source of truth. Pass a simple result. Do not repeat the same choice in several places.
+- **Minimize the diff.** Smallest change that solves the problem. Fewer lines beat elegant boilerplate.
+- **Bias to deletion.** Remove dead paths, unused CSS/vars, one-caller wrappers, and unused seed/test helpers before adding structure.
+- **Refuse rewrite-as-default.** "Apply poteto to the entire codebase" means encode the workflow in rules and delete proven waste, not rewrite every module.
+
+## Compose with Conduct gates
+
+After code changes: ruff, mypy `--strict`, targeted pytest, Postgres connectivity when the DB stack is touched. Tenant isolation and security rules are unchanged. One phase at a time; stop for `continue` at phase DoD.

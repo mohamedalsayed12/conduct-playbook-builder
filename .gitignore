@@ -24,6 +24,9 @@ uv.lock.bak
 # Local scratch scripts
 _tmp_*.py
 
+# Local agent decision trails (show-me-your-work)
+.audit/
+
 # IDE / OS
 .idea/
 .vscode/

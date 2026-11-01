@@ -105,16 +105,6 @@ _LOGISTICS_STAGE_PLAN: tuple[tuple[UserStage, int], ...] = (
 )
 
 
-def manufacturing_end_users() -> tuple[EndUserSpec, ...]:
-    """Return 20 fictional end users for Example Manufacturing GmbH."""
-    return _build_end_users("mfg", _MANUFACTURING_STAGE_PLAN, count=20)
-
-
-def logistics_end_users() -> tuple[EndUserSpec, ...]:
-    """Return 20 fictional end users for Demo Logistics AG."""
-    return _build_end_users("log", _LOGISTICS_STAGE_PLAN, count=20)
-
-
 # Fictional colleagues for demos. Emails are unique so sign-in stays unambiguous.
 _NAMED_DEMO_USERS: tuple[tuple[str, EndUserSpec], ...] = (
     (
@@ -168,9 +158,9 @@ def named_demo_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
 def demo_end_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
     """Return generated plus named end users for one demo tenant."""
     if tenant_name == TENANT_MANUFACTURING:
-        generated = manufacturing_end_users()
+        generated = _build_end_users("mfg", _MANUFACTURING_STAGE_PLAN, count=20)
     elif tenant_name == TENANT_LOGISTICS:
-        generated = logistics_end_users()
+        generated = _build_end_users("log", _LOGISTICS_STAGE_PLAN, count=20)
     else:
         message = f"Unknown demo tenant: {tenant_name}"
         raise ValueError(message)
