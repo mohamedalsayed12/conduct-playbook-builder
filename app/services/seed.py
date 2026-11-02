@@ -31,8 +31,8 @@ from app.seed_data import (
     TENANT_LOGISTICS,
     TENANT_MANUFACTURING,
     EndUserSpec,
+    demo_email,
     demo_end_users,
-    named_demo_email,
 )
 from app.services.tenants import copy_playbook_to_tenant, get_default_playbook
 
@@ -264,7 +264,7 @@ def _ensure_end_user(
     spec: EndUserSpec,
     now: datetime,
 ) -> int:
-    email = named_demo_email(spec)
+    email = demo_email(spec)
     existing = session.scalars(
         select(User).where(User.tenant_id == tenant_id, User.email == email)
     ).first()

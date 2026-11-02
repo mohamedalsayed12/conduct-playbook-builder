@@ -167,8 +167,8 @@ def demo_end_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
     return generated + named_demo_users(tenant_name)
 
 
-def named_demo_email(spec: EndUserSpec) -> str:
-    """Return the stored email for a named demo user."""
+def demo_email(spec: EndUserSpec) -> str:
+    """Return the email stored for a seeded end user."""
     return f"{spec.email_local}@example.com"
 
 

@@ -12,8 +12,8 @@ from app.models.enums import UserRole, UserStage
 from app.seed_data import (
     TENANT_LOGISTICS,
     TENANT_MANUFACTURING,
+    demo_email,
     demo_end_users,
-    named_demo_email,
     named_demo_users,
     stage_counts,
     stuck_end_user_count,
@@ -60,7 +60,7 @@ def test_seed_creates_expected_shape(
     assert _count_end_users(db_session, log_id) == len(log_users)
 
     named_emails = {
-        named_demo_email(spec)
+        demo_email(spec)
         for spec in named_demo_users(TENANT_MANUFACTURING)
         + named_demo_users(TENANT_LOGISTICS)
     }
