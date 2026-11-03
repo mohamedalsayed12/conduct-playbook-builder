@@ -73,6 +73,7 @@ def run_seed(session: Session, *, clock: Clock = utc_now) -> SeedReport:
 
     mfg, mfg_created = _ensure_tenant(session, name=TENANT_MANUFACTURING, now=now)
     logi, logi_created = _ensure_tenant(session, name=TENANT_LOGISTICS, now=now)
+    _sync_tenant_playbooks(session, tenant_ids=(mfg.id, logi.id))
 
     assignments_created = 0
     assignments_created += _ensure_assignment(
@@ -139,6 +140,9 @@ def _ensure_default_playbook(session: Session, *, now: datetime) -> int:
         .limit(1)
     ).first()
     if existing is not None:
+        existing.name = DEFAULT_PLAYBOOK_NAME
+        _sync_playbook_steps(session, playbook=existing)
+        session.flush()
         return 0
     playbook = Playbook(
         tenant_id=None,
@@ -160,6 +164,35 @@ def _ensure_default_playbook(session: Session, *, now: datetime) -> int:
         )
     session.flush()
     return 1
+
+
+def _sync_playbook_steps(session: Session, *, playbook: Playbook) -> None:
+    """Bring playbook steps in line with DEFAULT_PLAYBOOK_STEPS."""
+    # Sessions may run with autoflush=False; flush so copied steps are visible.
+    session.flush()
+    steps = list(
+        session.scalars(
+            select(PlaybookStep).where(PlaybookStep.playbook_id == playbook.id)
+        ).all()
+    )
+    by_key = {(step.stage, step.position): step for step in steps}
+    for spec in DEFAULT_PLAYBOOK_STEPS:
+        current = by_key.get((spec.stage, spec.position))
+        if current is None:
+            session.add(
+                PlaybookStep(
+                    playbook_id=playbook.id,
+                    stage=spec.stage,
+                    position=spec.position,
+                    title=spec.title,
+                    description=spec.description,
+                    due_within_days=spec.due_within_days,
+                )
+            )
+            continue
+        current.title = spec.title
+        current.description = spec.description
+        current.due_within_days = spec.due_within_days
 
 
 def _ensure_strategist(session: Session, *, now: datetime) -> tuple[User, bool]:
@@ -202,6 +235,26 @@ def _ensure_tenant(
     default_playbook = get_default_playbook(session)
     copy_playbook_to_tenant(session, default_playbook, tenant.id, now)
     return tenant, 1
+
+
+def _sync_tenant_playbooks(
+    session: Session,
+    *,
+    tenant_ids: tuple[uuid.UUID, ...],
+) -> None:
+    """Refresh each tenant's playbook name and steps from the default."""
+    for tenant_id in tenant_ids:
+        playbook = session.scalars(
+            select(Playbook)
+            .where(Playbook.tenant_id == tenant_id)
+            .order_by(Playbook.created_at.asc())
+            .limit(1)
+        ).first()
+        if playbook is None:
+            continue
+        playbook.name = DEFAULT_PLAYBOOK_NAME
+        _sync_playbook_steps(session, playbook=playbook)
+    session.flush()
 
 
 def _ensure_assignment(

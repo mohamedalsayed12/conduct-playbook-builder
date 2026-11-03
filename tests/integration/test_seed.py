@@ -7,11 +7,21 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import StageEvent, StrategistAssignment, Tenant, User
-from app.models.enums import UserRole, UserStage
+from app.models import (
+    Playbook,
+    PlaybookStep,
+    StageEvent,
+    StrategistAssignment,
+    Tenant,
+    User,
+)
+from app.models.enums import SapRole, UserRole, UserStage
 from app.seed_data import (
+    DEFAULT_PLAYBOOK_NAME,
+    DEFAULT_PLAYBOOK_STEPS,
     TENANT_LOGISTICS,
     TENANT_MANUFACTURING,
+    USERS_PER_TENANT,
     demo_email,
     demo_end_users,
     named_demo_users,
@@ -84,6 +94,42 @@ def test_seed_creates_expected_shape(
 
     events = db_session.scalar(select(func.count()).select_from(StageEvent))
     assert events is not None and events >= 40
+
+    assert len(mfg_users) == USERS_PER_TENANT + len(
+        named_demo_users(TENANT_MANUFACTURING)
+    )
+    assert len(log_users) == USERS_PER_TENANT + len(named_demo_users(TENANT_LOGISTICS))
+    sap_roles = set(
+        db_session.scalars(
+            select(User.sap_role).where(
+                User.role == UserRole.END_USER,
+                User.sap_role.is_not(None),
+            )
+        ).all()
+    )
+    assert sap_roles == set(SapRole)
+
+    playbooks = list(db_session.scalars(select(Playbook)).all())
+    assert len(playbooks) == 3
+    assert all(playbook.name == DEFAULT_PLAYBOOK_NAME for playbook in playbooks)
+    expected_steps = {
+        (step.stage, step.position, step.title, step.description, step.due_within_days)
+        for step in DEFAULT_PLAYBOOK_STEPS
+    }
+    for playbook in playbooks:
+        stored = {
+            (
+                step.stage,
+                step.position,
+                step.title,
+                step.description,
+                step.due_within_days,
+            )
+            for step in db_session.scalars(
+                select(PlaybookStep).where(PlaybookStep.playbook_id == playbook.id)
+            ).all()
+        }
+        assert stored == expected_steps
 
 
 def test_seed_is_idempotent(

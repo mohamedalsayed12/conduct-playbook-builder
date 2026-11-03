@@ -113,9 +113,9 @@
 ## Phase 5 — Seed data
 
 ### Idempotent seed by natural keys
-**Decision:** `run_seed` looks up the default playbook, strategist email, tenant names, assignments, and `(tenant_id, email)` users before inserting; existing rows are left unchanged.
-**Alternatives:** Wipe-and-recreate; upsert that rewrites stage history every run.
-**Why:** Strategists re-run `make seed` safely on a shared demo DB without duplicating accounts or resetting progress they may have advanced by hand.
+**Decision:** `run_seed` looks up the default playbook, strategist email, tenant names, assignments, and `(tenant_id, email)` users before inserting. Growing the seed list adds new users; playbook step copy on the default and seeded tenants is refreshed to `DEFAULT_PLAYBOOK_STEPS`. User stages and history are never reset.
+**Alternatives:** Wipe-and-recreate; upsert that rewrites stage history every run; leave playbook copy frozen forever.
+**Why:** Safe re-runs on a shared demo DB without wiping progress, while still picking up roster and playbook copy updates.
 
 ## Deploy — Render free Blueprint
 

@@ -81,6 +81,11 @@ What each build phase shipped. Updated at the end of every phase before waiting 
 
 - Added `.github/workflows/openqodex.yml`: scanners-only on every PR, SARIF to code scanning, `block-on-severity: major`, `fail-on-tool-error: true`, AI review off.
 
+## Follow-up — Conduct-shaped seed roster
+
+- Seed ~100 end users per fictional tenant with a developer-heavy SAP role mix; playbook steps use Conduct deployment language.
+- Idempotent seed refreshes default + tenant playbook step copy; never resets user stages.
+
 ## Phase 8 — Rollout dashboard
 
 **Branch / PR / release:** `phase-8-dashboard` · [#15](https://github.com/mohamedalsayed12/conduct-playbook-builder/pull/15) · [release](https://github.com/mohamedalsayed12/conduct-playbook-builder/releases/tag/phase-8-dashboard)

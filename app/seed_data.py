@@ -15,10 +15,19 @@ SEED_USER_PASSWORD = "seed-user-pass-1"
 TENANT_MANUFACTURING = "Example Manufacturing GmbH"
 TENANT_LOGISTICS = "Demo Logistics AG"
 
-DEFAULT_PLAYBOOK_NAME = "Default Conduct Playbook"
+DEFAULT_PLAYBOOK_NAME = "Default Conduct deployment playbook"
 
 # Matches Settings.stuck_after_days. Active users are never counted as stuck.
 SEED_STUCK_AFTER_DAYS = 7
+
+USERS_PER_TENANT = 100
+
+_SAP_ROLE_WEIGHTS: tuple[tuple[SapRole, int], ...] = (
+    (SapRole.DEVELOPER, 40),
+    (SapRole.ANALYST, 30),
+    (SapRole.PROCESS_OWNER, 20),
+    (SapRole.ARCHITECT, 10),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,32 +45,33 @@ DEFAULT_PLAYBOOK_STEPS: tuple[PlaybookStepSpec, ...] = (
     PlaybookStepSpec(
         stage=UserStage.ACTIVATED,
         position=1,
-        title="30-minute guided walkthrough",
-        description="Complete the product walkthrough within 3 days.",
+        title="48-hour Conduct orientation",
+        description=(
+            "Complete the guided walkthrough: connect to the customer SAP "
+            "landscape and see how Conduct reads custom code."
+        ),
         due_within_days=3,
     ),
     PlaybookStepSpec(
         stage=UserStage.FIRST_USE,
         position=1,
-        title="Run first system question",
-        description="Ask the first question on own custom code within 7 days.",
+        title="First question on own custom code",
+        description=(
+            "Ask Conduct about a real dependency or change in the team's "
+            "custom code so first value lands on their system."
+        ),
         due_within_days=7,
     ),
     PlaybookStepSpec(
         stage=UserStage.ACTIVE,
         position=1,
-        title="Weekly check-in",
-        description="Confirm ongoing usage with the deployment strategist.",
+        title="Weekly deployment check-in",
+        description=(
+            "Confirm ongoing use with the deployment strategist: stuck work, "
+            "S/4 or change pipelines, and next playbook actions."
+        ),
         due_within_days=14,
     ),
-)
-
-# About 40 generated end users (20 each), plus 10 named demo colleagues.
-_SAP_CYCLE: tuple[SapRole, ...] = (
-    SapRole.DEVELOPER,
-    SapRole.ANALYST,
-    SapRole.PROCESS_OWNER,
-    SapRole.ARCHITECT,
 )
 
 
@@ -75,34 +85,33 @@ class EndUserSpec:
     days_in_current_stage: int
 
 
-# Early rollout: two full cycles plus four, so 20 users.
-# Result: invited 6, activated 6, first_use 4, active 4; 8 stuck.
-_MANUFACTURING_CYCLE: tuple[tuple[UserStage, int], ...] = (
-    (UserStage.INVITED, 2),
-    (UserStage.INVITED, 10),
-    (UserStage.ACTIVATED, 1),
-    (UserStage.ACTIVATED, 9),
-    (UserStage.FIRST_USE, 3),
-    (UserStage.FIRST_USE, 12),
-    (UserStage.ACTIVE, 4),
-    (UserStage.ACTIVE, 20),
-)
-_MANUFACTURING_STAGE_PLAN: tuple[tuple[UserStage, int], ...] = (
-    _MANUFACTURING_CYCLE * 2 + _MANUFACTURING_CYCLE[:4]
-)
+# Early rollout: more invited/activated and stuck than logistics.
+_MANUFACTURING_STAGE_COUNTS: dict[UserStage, int] = {
+    UserStage.INVITED: 28,
+    UserStage.ACTIVATED: 28,
+    UserStage.FIRST_USE: 22,
+    UserStage.ACTIVE: 22,
+}
+_MANUFACTURING_DAYS: dict[UserStage, tuple[int, ...]] = {
+    UserStage.INVITED: (2, 8, 12, 18),
+    UserStage.ACTIVATED: (1, 4, 9, 14),
+    UserStage.FIRST_USE: (3, 6, 11, 16),
+    UserStage.ACTIVE: (4, 10, 20, 30),
+}
 
-# Later rollout: mostly active. 2 of 20 stuck, so the dashboard differs at a glance.
-_LOGISTICS_STAGE_PLAN: tuple[tuple[UserStage, int], ...] = (
-    (UserStage.INVITED, 1),
-    (UserStage.INVITED, 15),
-    (UserStage.ACTIVATED, 2),
-    (UserStage.ACTIVATED, 11),
-    (UserStage.FIRST_USE, 1),
-    (UserStage.FIRST_USE, 2),
-    (UserStage.FIRST_USE, 3),
-    (UserStage.FIRST_USE, 4),
-    *((UserStage.ACTIVE, 4),) * 12,
-)
+# Later rollout: mostly active.
+_LOGISTICS_STAGE_COUNTS: dict[UserStage, int] = {
+    UserStage.INVITED: 8,
+    UserStage.ACTIVATED: 12,
+    UserStage.FIRST_USE: 20,
+    UserStage.ACTIVE: 60,
+}
+_LOGISTICS_DAYS: dict[UserStage, tuple[int, ...]] = {
+    UserStage.INVITED: (1, 10, 15),
+    UserStage.ACTIVATED: (2, 5, 11),
+    UserStage.FIRST_USE: (1, 3, 4, 8),
+    UserStage.ACTIVE: (4, 12, 20, 40),
+}
 
 
 # Fictional colleagues for demos. Emails are unique so sign-in stays unambiguous.
@@ -158,9 +167,15 @@ def named_demo_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
 def demo_end_users(tenant_name: str) -> tuple[EndUserSpec, ...]:
     """Return generated plus named end users for one demo tenant."""
     if tenant_name == TENANT_MANUFACTURING:
-        generated = _build_end_users("mfg", _MANUFACTURING_STAGE_PLAN, count=20)
+        generated = _build_end_users(
+            "mfg",
+            _stage_plan(_MANUFACTURING_STAGE_COUNTS, _MANUFACTURING_DAYS),
+        )
     elif tenant_name == TENANT_LOGISTICS:
-        generated = _build_end_users("log", _LOGISTICS_STAGE_PLAN, count=20)
+        generated = _build_end_users(
+            "log",
+            _stage_plan(_LOGISTICS_STAGE_COUNTS, _LOGISTICS_DAYS),
+        )
     else:
         message = f"Unknown demo tenant: {tenant_name}"
         raise ValueError(message)
@@ -190,21 +205,50 @@ def stuck_end_user_count(users: tuple[EndUserSpec, ...]) -> int:
     )
 
 
+def _sap_role_for_index(index: int) -> SapRole:
+    slot = index % 100
+    cursor = 0
+    for role, weight in _SAP_ROLE_WEIGHTS:
+        cursor += weight
+        if slot < cursor:
+            return role
+    return SapRole.DEVELOPER
+
+
+def _stage_plan(
+    counts: dict[UserStage, int],
+    days_by_stage: dict[UserStage, tuple[int, ...]],
+) -> tuple[tuple[UserStage, int], ...]:
+    total = sum(counts.values())
+    if total != USERS_PER_TENANT:
+        message = f"stage counts must sum to {USERS_PER_TENANT}, got {total}"
+        raise ValueError(message)
+    plan: list[tuple[UserStage, int]] = []
+    for stage in (
+        UserStage.INVITED,
+        UserStage.ACTIVATED,
+        UserStage.FIRST_USE,
+        UserStage.ACTIVE,
+    ):
+        days_opts = days_by_stage[stage]
+        for index in range(counts[stage]):
+            plan.append((stage, days_opts[index % len(days_opts)]))
+    return tuple(plan)
+
+
 def _build_end_users(
     prefix: str,
     stage_plan: tuple[tuple[UserStage, int], ...],
-    *,
-    count: int,
 ) -> tuple[EndUserSpec, ...]:
-    if len(stage_plan) != count:
-        message = f"{prefix} stage plan must contain {count} users"
+    if len(stage_plan) != USERS_PER_TENANT:
+        message = f"{prefix} stage plan must contain {USERS_PER_TENANT} users"
         raise ValueError(message)
     users: list[EndUserSpec] = []
     for index, (stage, days) in enumerate(stage_plan):
         users.append(
             EndUserSpec(
                 email_local=f"{prefix}.user{index + 1:02d}",
-                sap_role=_SAP_CYCLE[index % len(_SAP_CYCLE)],
+                sap_role=_sap_role_for_index(index),
                 stage=stage,
                 days_in_current_stage=days,
             )
