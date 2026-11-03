@@ -85,7 +85,6 @@ class EndUserSpec:
     days_in_current_stage: int
 
 
-# Early rollout: more invited/activated and stuck than logistics.
 _MANUFACTURING_STAGE_COUNTS: dict[UserStage, int] = {
     UserStage.INVITED: 28,
     UserStage.ACTIVATED: 28,
@@ -99,7 +98,6 @@ _MANUFACTURING_DAYS: dict[UserStage, tuple[int, ...]] = {
     UserStage.ACTIVE: (4, 10, 20, 30),
 }
 
-# Later rollout: mostly active.
 _LOGISTICS_STAGE_COUNTS: dict[UserStage, int] = {
     UserStage.INVITED: 8,
     UserStage.ACTIVATED: 12,
@@ -114,7 +112,6 @@ _LOGISTICS_DAYS: dict[UserStage, tuple[int, ...]] = {
 }
 
 
-# Fictional colleagues for demos. Emails are unique so sign-in stays unambiguous.
 _NAMED_DEMO_USERS: tuple[tuple[str, EndUserSpec], ...] = (
     (
         TENANT_MANUFACTURING,
