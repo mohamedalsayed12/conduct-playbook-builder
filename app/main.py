@@ -21,7 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     setup_logging(resolved)
 
     application = FastAPI(
-        title="Conduct Playbook Builder",
+        title="Onboarding Playbook Tracker",
         version="0.8.0",
         docs_url="/docs",
         redoc_url="/redoc",
